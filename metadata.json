@@ -1,0 +1,5 @@
+{
+  "name": "CNN ARVR",
+  "description": "A 3D AR/VR visualization of a simple Convolutional Neural Network (CNN).",
+  "requestFramePermissions": []
+}
