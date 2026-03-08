@@ -4,7 +4,7 @@ import { Layer } from './Layer';
 import { Connection } from './Connection';
 import { DenseConnections } from './DenseConnections';
 import { useState, useEffect, useRef } from 'react';
-import { Play, Pause, SkipForward, SkipBack, Upload, Settings, X, Activity, ChevronDown, ChevronUp, Eye, EyeOff, Grid3x3, Link, LayoutDashboard, HelpCircle, Info, Box } from 'lucide-react';
+import { Play, Pause, SkipForward, SkipBack, Upload, Settings, X, Activity, ChevronDown, ChevronUp, Eye, EyeOff, Grid3x3, Network, LayoutDashboard, HelpCircle, Info, Box } from 'lucide-react';
 import * as THREE from 'three';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { processImage, startTraining, pauseTraining, resumeTraining, saveCheckpoint, loadCheckpoint, exportTrainingHistory, getWorker, tensorDataToMaps } from '../utils/imageProcessor';
@@ -65,10 +65,11 @@ export function Scene() {
   const [showDataPanel, setShowDataPanel] = useState(false);
   const [showHelp, setShowHelp] = useState(true);
   const [lang, setLang] = useState<'sr' | 'en'>('sr');
-  const [showStars, setShowStars] = useState(true);
+  const [showStars, setShowStars] = useState(false);
   const [showGrid, setShowGrid] = useState(false);
   const [showConnections, setShowConnections] = useState(true);
   const [showARMode, setShowARMode] = useState(false);
+  const [showMatrices, setShowMatrices] = useState(true);
 
   // Training Data Collection
   const [collectedData, setCollectedData] = useState<{ images: number[][][]; labels: number[] }>(trainingDataset);
@@ -287,9 +288,9 @@ export function Scene() {
 
       {/* Help Modal */}
       {showHelp && (
-        <div className="absolute inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-2 sm:p-4 text-left pointer-events-auto">
-          <div className="bg-black/80 border border-white/20 p-4 sm:p-8 rounded-2xl sm:rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl animate-in zoom-in-95 duration-300 custom-scrollbar">
-            <div className="flex justify-between items-start mb-6">
+        <div className="fixed inset-0 z-[200] bg-black/80 backdrop-blur-lg overflow-y-auto pointer-events-auto flex justify-center items-start p-4 py-10 sm:py-20">
+          <div className="bg-[#151515] border border-white/10 p-5 sm:p-10 rounded-3xl max-w-2xl w-full shadow-2xl animate-in zoom-in-95 duration-300 relative flex flex-col gap-6">
+            <div className="flex justify-between items-start">
               <div className="flex items-center gap-3">
                 <div className="bg-blue-500/20 p-1.5 sm:p-2 rounded-xl">
                   <HelpCircle size={22} className="text-blue-400 sm:w-[28px] sm:h-[28px]" />
@@ -347,7 +348,7 @@ export function Scene() {
               <div className="space-y-4">
                 <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
                   <h4 className="text-white font-semibold mb-2 flex items-center gap-2">
-                    <Link size={16} className="text-purple-400" />
+                    <Network size={16} className="text-purple-400" />
                     {lang === 'sr' ? 'Analiza veza' : 'Connection Analysis'}
                   </h4>
                   <p>{lang === 'sr' ? 
@@ -652,6 +653,7 @@ export function Scene() {
                     layer.type === 'output' ? ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'] : undefined
                   }
                   onClick={() => setSelectedLayerId(layer.id)}
+                  showMaps={showMatrices}
                 />
                 {showConnections && index < layers.length - 1 && (
                   <>
@@ -725,21 +727,28 @@ export function Scene() {
               className="p-1.5 rounded-full bg-white/5 hover:bg-white/20 transition-colors"
               title={showStars ? "Hide stars" : "Show stars"}
             >
-              {showStars ? <Eye size={18} /> : <EyeOff size={18} />}
+              {showStars ? <Eye size={18} className="text-blue-400" /> : <EyeOff size={18} className="text-gray-400" />}
             </button>
             <button 
               onClick={() => setShowGrid(!showGrid)}
               className="p-1.5 rounded-full bg-white/5 hover:bg-white/20 transition-colors"
               title={showGrid ? "Hide grid" : "Show grid"}
             >
-              <Grid3x3 size={18} />
+              <Grid3x3 size={18} className={showGrid ? "text-blue-400" : "text-gray-400"} />
             </button>
             <button 
               onClick={() => setShowConnections(!showConnections)}
               className="p-1.5 rounded-full bg-white/5 hover:bg-white/20 transition-colors"
               title={showConnections ? "Hide connections" : "Show connections"}
             >
-              <Link size={18} className={showConnections ? "text-blue-400" : "text-gray-400"} />
+              <Network size={18} className={showConnections ? "text-blue-400" : "text-gray-400"} />
+            </button>
+            <button 
+              onClick={() => setShowMatrices(!showMatrices)}
+              className="p-1.5 rounded-full bg-white/5 hover:bg-white/20 transition-colors shadow-lg"
+              title={lang === 'sr' ? 'Prikaži/Sakrij matrice' : 'Show/Hide Matrices'}
+            >
+              <Grid3x3 size={18} className={showMatrices ? "text-blue-400" : "text-gray-400"} />
             </button>
             <button 
               onClick={() => setShowDataPanel(!showDataPanel)}

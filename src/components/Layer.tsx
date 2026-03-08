@@ -14,10 +14,11 @@ interface LayerProps {
   featureMaps?: string[]; // Array of data URLs for feature maps
   activations?: number[]; // Array of activation values for FC/Output
   outputLabels?: string[]; // Labels for output neurons
+  showMaps?: boolean;
   onClick?: () => void;
 }
 
-export function Layer({ position, type, size, depth, label, active, textureUrl, featureMaps, activations, outputLabels, onClick }: LayerProps) {
+export function Layer({ position, type, size, depth, label, active, textureUrl, featureMaps, activations, outputLabels, showMaps = true, onClick }: LayerProps) {
   const groupRef = useRef<THREE.Group>(null);
   const [texture, setTexture] = useState<THREE.Texture | null>(null);
   const [mapTextures, setMapTextures] = useState<THREE.Texture[]>([]);
@@ -67,18 +68,19 @@ export function Layer({ position, type, size, depth, label, active, textureUrl, 
     const cols = Math.ceil(Math.sqrt(depth));
     const rows = Math.ceil(depth / cols);
     
-    for (let i = 0; i < depth; i++) {
-      const row = Math.floor(i / cols);
-      const col = i % cols;
-      
-      const y = (col - (cols - 1) / 2) * (mapSize + gap);
-      const z = -(row - (rows - 1) / 2) * (mapSize + gap);
-      
-      // Use specific feature map texture if available, otherwise fallback to main texture or color
-      const mapTex = mapTextures[i] || (i === 0 ? texture : null);
+    const fixedYOffset = -2.5; // Fixed downward offset for all feature maps
 
+    for (let i = 0; i < depth; i++) {
+      const mRow = Math.floor(i / cols);
+      const mCol = i % cols;
+      const mY = -(mRow - (rows - 1) / 2) * (mapSize + gap);
+      const mZ = (mCol - (cols - 1) / 2) * (mapSize + gap);
+      
+      const mapTex = mapTextures[i] || (i === 0 ? texture : null);
+      const fixedYOffset = -2.5; 
+      
       maps.push(
-        <group key={i} position={[-0.8, y, z]}>
+        <group key={i} position={[0, mY + fixedYOffset, mZ]}>
           <Box args={[0.05, mapSize, mapSize]}>
             <meshStandardMaterial 
               color={mapTex ? "white" : (active ? "#4ade80" : "#60a5fa")} 
@@ -138,7 +140,7 @@ export function Layer({ position, type, size, depth, label, active, textureUrl, 
     const mapSize = 2;
     
     return (
-      <group key="input-display" position={[-0.8, 0, 0]}>
+      <group key="input-display" position={[0, -2.5, 0]}>
         <Box args={[0.05, mapSize, mapSize]}>
           <meshStandardMaterial 
             color={texture ? "white" : (active ? "#fbbf24" : "#6b7280")} 
@@ -209,8 +211,13 @@ export function Layer({ position, type, size, depth, label, active, textureUrl, 
       
       for (let r = 0; r < gridSide; r++) {
         for (let c = 0; c < gridSide; c++) {
+          // Y = Vertical (Row), Z = Horizontal (Column)
+          // Flip Y: r=0 (top) is positive Y
+          const y = start + (gridSide - 1 - r) * spacing;
+          const z = start + c * spacing;
+          
           neurons.push(
-            <mesh key={`in-${r}-${c}`} position={[0, start + c * spacing, start + r * spacing]}>
+            <mesh key={`in-${r}-${c}`} position={[0, y, z]}>
               <sphereGeometry args={[radius, 8, 8]} />
               <meshStandardMaterial 
                 color={active ? "#fef08a" : "#666"} 
@@ -236,20 +243,21 @@ export function Layer({ position, type, size, depth, label, active, textureUrl, 
       for (let i = 0; i < depth; i++) {
         const mRow = Math.floor(i / mapCols);
         const mCol = i % mapCols;
-        const mY = (mCol - (mapCols - 1) / 2) * (mapSize + gap);
-        const mZ = -(mRow - (mapRows - 1) / 2) * (mapSize + gap);
+        const mY = -(mRow - (mapRows - 1) / 2) * (mapSize + gap);
+        const mZ = (mCol - (mapCols - 1) / 2) * (mapSize + gap);
 
         for (let r = 0; r < neuronGridSize; r++) {
           for (let c = 0; c < neuronGridSize; c++) {
-            const y = mY - mapSize/2 + (c + 1) * neuronSpacing;
-            const z = mZ - mapSize/2 + (r + 1) * neuronSpacing;
+            // Y = Vertical (Row), Z = Horizontal (Column)
+            const y = mY - mapSize/2 + (neuronGridSize - 1 - r + 1) * neuronSpacing;
+            const z = mZ - mapSize/2 + (c + 1) * neuronSpacing;
             neurons.push(
-              <mesh key={`map-${i}-n-${r}-${c}`} position={[0.1, y, z]}>
+              <mesh key={`map-${i}-n-${r}-${c}`} position={[0, y, z]}>
                 <sphereGeometry args={[radius, 8, 8]} />
                 <meshStandardMaterial 
-                  color={active ? "#67e8f9" : "#666"} 
-                  emissive={active ? "#67e8f9" : "#000"}
-                  emissiveIntensity={active ? 0.4 : 0}
+                  color={active ? "#67e8f9" : "#888"} 
+                  emissive={active ? "#67e8f9" : "#333"}
+                  emissiveIntensity={active ? 1.0 : 0.2}
                 />
               </mesh>
             );
@@ -275,9 +283,8 @@ export function Layer({ position, type, size, depth, label, active, textureUrl, 
         
         // Visualize activation intensity if available
         const activation = activations ? activations[i] : 0;
-        const baseIntensity = active ? 0.2 : 0;
-        const intensity = activations ? Math.min(1.2, baseIntensity + activation * 0.8) : (active ? 0.6 : 0);
-        
+        const baseIntensity = active ? 0.35 : 0.1; 
+        const intensity = activations ? Math.min(1.5, baseIntensity + activation * 1.0) : (active ? 0.8 : 0.1);        
         // For Output layer, show probability bars
         const isOutput = type === 'output';
         const isFC = type === 'fc';
@@ -289,9 +296,9 @@ export function Layer({ position, type, size, depth, label, active, textureUrl, 
             <mesh>
               <sphereGeometry args={[radius, 16, 16]} />
               <meshStandardMaterial 
-                color={active ? color : "#666"} 
-                emissive={active ? color : "#000"}
-                emissiveIntensity={intensity * 1.5}
+                color={active ? color : "#999"} 
+                emissive={active ? color : "#222"}
+                emissiveIntensity={intensity * 2.0}
                 side={THREE.DoubleSide}
               />
             </mesh>
@@ -369,27 +376,25 @@ export function Layer({ position, type, size, depth, label, active, textureUrl, 
         {label}
       </Text>
       
-      {type === 'fc' || type === 'output' ? 
-        renderNeurons() : 
-        (type === 'conv' || type === 'pool' || type === 'input') ? 
-          <>
-            {/* Feature maps/Grid in front */}
-            <group position={[0, 0, 0.5]}>
+      {showMaps && (
+        type === 'fc' || type === 'output' ? 
+          renderNeurons() : 
+          (type === 'conv' || type === 'pool' || type === 'input') ? 
+            <>
+              {/* Feature maps/Grid */}
+            <group position={[0, 0, 0]}>
               {type === 'input' ? renderFeatureMapsInput() : renderFeatureMaps()}
             </group>
-            {/* Neurons behind */}
-            <group position={[0, 0, -0.5]}>
+            {/* Neurons */}
+            <group position={[0, 0, 0]}>
               {renderNeurons()}
             </group>
-          </> : 
-          renderFeatureMaps()
-      }
+            </> : 
+            renderFeatureMaps()
+      )}
       
-      {/* Base platform for the layer */}
-      <mesh position={[0, -3, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <circleGeometry args={[2, 32]} />
-        <meshStandardMaterial color="#333" transparent opacity={0.5} side={THREE.DoubleSide} />
-      </mesh>
+      {!showMaps && renderNeurons()}
+      
     </group>
   );
 }
