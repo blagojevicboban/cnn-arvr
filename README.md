@@ -1,11 +1,11 @@
 <div align="center">
-<img width="1200" alt="CNN 3D Vizuelizacija Hero" src="public/screenshot.png" />
+<img width="1200" alt="CNN 3D Vizuelizacija Hero" src="public/cnn-arvr.gif" />
 </div>
 
 # CNN 3D Vizuelizacija
 
-Sve što vam je potrebno za lokalno pokretanje aplikacije.
-Proverite aplikaciju na:
+Everything you need to run the application locally.
+Check the application at:
 https://blagojevicboban.github.io/cnn-arvr/
 
 View your app in AI Studio: https://ai.studio/apps/3e02985d-3179-4aa2-ac17-a85437ace644
