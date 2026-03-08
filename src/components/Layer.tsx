@@ -238,7 +238,7 @@ export function Layer({ position, type, size, depth, label, active, textureUrl, 
       // Downsample neurons for performance (e.g., 6x6 for Conv, 4x4 for Pool)
       const neuronGridSize = type === 'conv' ? 6 : 4;
       const neuronSpacing = mapSize / (neuronGridSize + 1);
-      const radius = type === 'conv' ? 0.04 : 0.06;
+      const radius = type === 'conv' ? 0.02 : 0.035;
 
       for (let i = 0; i < depth; i++) {
         const mRow = Math.floor(i / mapCols);
@@ -271,7 +271,7 @@ export function Layer({ position, type, size, depth, label, active, textureUrl, 
       const gridHeight = Math.ceil(totalNeurons / gridWidth); // Height along Y
       
       const spacing = type === 'output' ? 0.6 : 0.35;
-      const radius = type === 'output' ? 0.22 : 0.15;
+      const radius = type === 'output' ? 0.12 : 0.07;
       const startZ = -(gridWidth - 1) * spacing / 2;
       const startY = (gridHeight - 1) * spacing / 2;
       
@@ -283,12 +283,12 @@ export function Layer({ position, type, size, depth, label, active, textureUrl, 
         
         // Visualize activation intensity if available
         const activation = activations ? activations[i] : 0;
-        const baseIntensity = active ? 0.35 : 0.1; 
-        const intensity = activations ? Math.min(1.5, baseIntensity + activation * 1.0) : (active ? 0.8 : 0.1);        
+        const baseIntensity = active ? 0.5 : 0.25; 
+        const intensity = activations ? Math.min(1.8, baseIntensity + activation * 1.2) : (active ? 0.8 : 0.3);        
         // For Output layer, show probability bars
         const isOutput = type === 'output';
         const isFC = type === 'fc';
-        const color = isOutput ? (activation > 0.5 ? "#4ade80" : "#fcd34d") : (isFC ? "#fde68a" : "#60a5fa");
+        const color = isOutput ? (activation > 0.5 ? "#4ade80" : "#fcd34d") : (isFC ? "#fef08a" : "#60a5fa");
         const outputLabel = outputLabels ? outputLabels[i] : `${i}`;
         
         neurons.push(
@@ -296,9 +296,9 @@ export function Layer({ position, type, size, depth, label, active, textureUrl, 
             <mesh>
               <sphereGeometry args={[radius, 16, 16]} />
               <meshStandardMaterial 
-                color={active ? color : "#999"} 
-                emissive={active ? color : "#222"}
-                emissiveIntensity={intensity * 2.0}
+                color={active ? color : "#aaa"} 
+                emissive={active ? color : "#444"}
+                emissiveIntensity={intensity * 2.5}
                 side={THREE.DoubleSide}
               />
             </mesh>
