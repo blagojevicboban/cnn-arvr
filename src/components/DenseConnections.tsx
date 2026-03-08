@@ -14,9 +14,10 @@ interface DenseConnectionsProps {
   layer2: LayerData;
   active: boolean;
   trainingStep?: number;
+  weight?: number; // Connection weight (0-1), affects line thickness
 }
 
-export function DenseConnections({ layer1, layer2, active, trainingStep = 0 }: DenseConnectionsProps) {
+export function DenseConnections({ layer1, layer2, active, trainingStep = 0, weight = 0.5 }: DenseConnectionsProps) {
   const linesRef = useRef<THREE.LineSegments>(null);
   
   const { positions, colors } = useMemo(() => {
@@ -159,7 +160,7 @@ export function DenseConnections({ layer1, layer2, active, trainingStep = 0 }: D
       <lineBasicMaterial 
         vertexColors 
         transparent 
-        opacity={active ? 0.3 : 0.05} 
+        opacity={(active ? 0.3 : 0.05) * weight} 
         depthWrite={false}
         blending={THREE.AdditiveBlending}
       />

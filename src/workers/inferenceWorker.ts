@@ -90,9 +90,11 @@ async function prepareDataset(rawDataset: { images: any; labels: any }) {
   }
 
   // ensure shape [N,28,28,1]
-  const images = tf.tensor4d(cleanedImages as any).div(255); // normalize
+  const imagesTensor = tf.tensor3d(cleanedImages as any);
+  const imagesReshaped = imagesTensor.reshape([cleanedImages.length, 28, 28, 1]).div(255); // normalize
+  imagesTensor.dispose();
   const labels = tf.oneHot(tf.tensor1d(rawDataset.labels.map((v: any) => (typeof v === 'number' ? v : 0)) as any, 'int32'), 10);
-  dataset = { images, labels };
+  dataset = { images: imagesReshaped, labels };
 }
 
 async function trainStep(batchSize: number) {

@@ -1,6 +1,6 @@
 import { useRef, useState, useEffect } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { Text, Box } from '@react-three/drei';
+import { Text, Box, Line } from '@react-three/drei';
 import * as THREE from 'three';
 
 interface LayerProps {
@@ -87,16 +87,46 @@ export function Layer({ position, type, size, depth, label, active, textureUrl, 
               emissive={active ? "#4ade80" : "#000"}
               emissiveIntensity={active ? 0.2 : 0}
               map={mapTex}
+              side={THREE.DoubleSide}
             />
           </Box>
           {/* Grid lines on the feature map to represent pixels */}
-          {type !== 'fc' && type !== 'output' && (
-             <gridHelper 
-               args={[mapSize, size[0], 0xffffff, 0xffffff]} 
-               rotation={[Math.PI / 2, 0, 0]} 
-               position={[0, 0, 0.026]} 
-             />
-          )}
+          {type !== 'fc' && type !== 'output' && (() => {
+            const lines = [];
+            const segments = Math.min(size[0], 10); // Limit grid to 10x10 for performance
+            const step = mapSize / segments;
+            const halfSize = mapSize / 2;
+            
+            // Vertical lines
+            for (let i = 0; i <= segments; i++) {
+              const x = -halfSize + i * step;
+              lines.push(
+                <Line
+                  key={`v${i}`}
+                  points={[[x, -halfSize, 0.02], [x, halfSize, 0.02]]}
+                  color={0xFFFFFF}
+                  lineWidth={1.5}
+                  opacity={0.8}
+                />
+              );
+            }
+            
+            // Horizontal lines
+            for (let i = 0; i <= segments; i++) {
+              const y = -halfSize + i * step;
+              lines.push(
+                <Line
+                  key={`h${i}`}
+                  points={[[-halfSize, y, 0.02], [halfSize, y, 0.02]]}
+                  color={0xFFFFFF}
+                  lineWidth={1.5}
+                  opacity={0.8}
+                />
+              );
+            }
+            
+            return lines;
+          })()}
         </group>
       );
     }
@@ -105,50 +135,81 @@ export function Layer({ position, type, size, depth, label, active, textureUrl, 
 
   const renderNeurons = () => {
     const neurons = [];
-    const height = (size[0] - 1) * 0.5;
     
-    for (let i = 0; i < size[0]; i++) {
-      const y = (i - (size[0] - 1) / 2) * 0.5;
+    if (type === 'input') {
+      // For input layer, show 28x28 grid of neurons representing pixels
+      const gridSize = 28;
+      const spacing = 0.05; // Small spacing between neurons
+      const totalWidth = (gridSize - 1) * spacing;
+      const startX = -totalWidth / 2;
+      const startY = -totalWidth / 2;
       
-      // Visualize activation intensity if available
-      const activation = activations ? activations[i] : 0;
-      const intensity = activations ? activation : (active ? 0.8 : 0);
-      
-      // For Output layer, show probability bars
-      const isOutput = type === 'output';
-      const outputLabel = outputLabels ? outputLabels[i] : `${i}`;
-      
-      neurons.push(
-        <group key={i} position={[0, y, 0]}>
-            <mesh>
-            <sphereGeometry args={[0.15, 16, 16]} />
-            <meshStandardMaterial 
-                color={active ? "#facc15" : "#f87171"} 
-                emissive={active ? "#facc15" : "#000"}
-                emissiveIntensity={intensity}
-            />
+      for (let row = 0; row < gridSize; row++) {
+        for (let col = 0; col < gridSize; col++) {
+          const x = startX + col * spacing;
+          const y = startY + row * spacing;
+          
+          neurons.push(
+            <mesh key={`${row}-${col}`} position={[x, y, 0]}>
+              <sphereGeometry args={[0.01, 8, 8]} />
+              <meshStandardMaterial 
+                color={active ? "#fbbf24" : "#6b7280"} 
+                emissive={active ? "#fbbf24" : "#000"}
+                emissiveIntensity={active ? 0.3 : 0}
+                side={THREE.DoubleSide}
+              />
             </mesh>
-            {isOutput && activations ? (
-                <group position={[0.3, 0, 0]}>
-                    <Box args={[activation * 2, 0.1, 0.1]} position={[activation, 0, 0]}>
-                        <meshStandardMaterial color="#22c55e" />
-                    </Box>
-                    <Text position={[activation * 2 + 0.2, 0, 0]} fontSize={0.15} color="white" anchorX="left">
-                        {(activation * 100).toFixed(0)}%
-                    </Text>
-                    <Text position={[activation * 2 + 0.8, 0, 0]} fontSize={0.15} color="white" anchorX="left">
-                        {outputLabel}
-                    </Text>
-                </group>
-            ) : (
-                isOutput && (
-                    <Text position={[0.4, 0, 0]} fontSize={0.15} color="white" anchorX="left" anchorY="middle">
-                        {outputLabel}
-                    </Text>
-                )
-            )}
-        </group>
-      );
+          );
+        }
+      }
+    } else {
+      // For other layers, show vertical line of neurons
+      const height = (size[0] - 1) * 0.5;
+      
+      for (let i = 0; i < size[0]; i++) {
+        const y = (i - (size[0] - 1) / 2) * 0.5;
+        
+        // Visualize activation intensity if available
+        const activation = activations ? activations[i] : 0;
+        const intensity = activations ? activation : (active ? 0.8 : 0);
+        
+        // For Output layer, show probability bars
+        const isOutput = type === 'output';
+        const outputLabel = outputLabels ? outputLabels[i] : `${i}`;
+        
+        neurons.push(
+          <group key={i} position={[0, y, 0]}>
+              <mesh>
+              <sphereGeometry args={[0.15, 16, 16]} />
+              <meshStandardMaterial 
+                  color={active ? "#facc15" : "#f87171"} 
+                  emissive={active ? "#facc15" : "#000"}
+                  emissiveIntensity={intensity}
+                  side={THREE.DoubleSide}
+              />
+              </mesh>
+              {isOutput && activations ? (
+                  <group position={[0.3, 0, 0]}>
+                      <Box args={[activation * 2, 0.1, 0.1]} position={[activation, 0, 0]}>
+                          <meshStandardMaterial color="#22c55e" side={THREE.DoubleSide} />
+                      </Box>
+                      <Text position={[activation * 2 + 0.2, 0, 0]} fontSize={0.15} color="white" anchorX="left">
+                          {(activation * 100).toFixed(0)}%
+                      </Text>
+                      <Text position={[activation * 2 + 0.8, 0, 0]} fontSize={0.15} color="white" anchorX="left">
+                          {outputLabel}
+                      </Text>
+                  </group>
+              ) : (
+                  isOutput && (
+                      <Text position={[0.4, 0, 0]} fontSize={0.15} color="white" anchorX="left" anchorY="middle">
+                          {outputLabel}
+                      </Text>
+                  )
+              )}
+          </group>
+        );
+      }
     }
     return neurons;
   };
@@ -168,12 +229,26 @@ export function Layer({ position, type, size, depth, label, active, textureUrl, 
         {label}
       </Text>
       
-      {type === 'fc' || type === 'output' ? renderNeurons() : renderFeatureMaps()}
+      {type === 'fc' || type === 'output' || type === 'input' ? 
+        renderNeurons() : 
+        (type === 'conv' || type === 'pool') ? 
+          <>
+            {/* Feature maps in front */}
+            <group position={[0, 0, 0.5]}>
+              {renderFeatureMaps()}
+            </group>
+            {/* Neurons behind */}
+            <group position={[0, 0, -0.5]}>
+              {renderNeurons()}
+            </group>
+          </> : 
+          renderFeatureMaps()
+      }
       
       {/* Base platform for the layer */}
       <mesh position={[0, -3, 0]} rotation={[-Math.PI / 2, 0, 0]}>
         <circleGeometry args={[2, 32]} />
-        <meshStandardMaterial color="#333" transparent opacity={0.5} />
+        <meshStandardMaterial color="#333" transparent opacity={0.5} side={THREE.DoubleSide} />
       </mesh>
     </group>
   );

@@ -7,9 +7,10 @@ interface ConnectionProps {
   start: [number, number, number];
   end: [number, number, number];
   active?: boolean;
+  weight?: number; // Connection weight (0-1), affects line thickness
 }
 
-export function Connection({ start, end, active }: ConnectionProps) {
+export function Connection({ start, end, active, weight = 0.5 }: ConnectionProps) {
   const particleRef = useRef<THREE.Mesh>(null);
   const lineRef = useRef<any>(null);
   
@@ -66,7 +67,7 @@ export function Connection({ start, end, active }: ConnectionProps) {
         ref={lineRef}
         points={points} 
         color={active ? "#4ade80" : "#333"} 
-        lineWidth={active ? 3 : 1} 
+        lineWidth={active ? Math.max(1, weight * 5) : Math.max(0.5, weight * 2)} 
         transparent 
         opacity={active ? 0.6 : 0.2} 
         dashed={true}

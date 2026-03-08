@@ -212,15 +212,6 @@ export function Scene() {
     }));
   };
 
-  const updateLayerConfig = (id: number, key: keyof LayerConfig, value: number) => {
-    setLayers(prev => prev.map(layer => {
-      if (layer.id === id) {
-        return { ...layer, [key]: value };
-      }
-      return layer;
-    }));
-  };
-
   const handleNext = () => setActiveLayer((prev) => (prev + 1) % layers.length);
   const handlePrev = () => setActiveLayer((prev) => (prev - 1 + layers.length) % layers.length);
 
@@ -359,6 +350,7 @@ export function Scene() {
                 />
               </div>
             )}
+
           </div>
         </div>
       )}
@@ -403,8 +395,8 @@ export function Scene() {
                 </div>
             </div>
 
-            <div className="h-32 w-full">
-                <ResponsiveContainer width="100%" height="100%">
+            <div className="h-32 w-full" style={{ minHeight: '128px' }}>
+                <ResponsiveContainer width="100%" height={128}>
                     <LineChart data={trainingHistory}>
                         <CartesianGrid strokeDasharray="3 3" stroke="#333" />
                         <XAxis dataKey="step" hide />
@@ -533,12 +525,14 @@ export function Scene() {
                         layer2={layers[index + 1]}
                         active={activeLayer === index || isTraining}
                         trainingStep={trainingStep}
+                        weight={0.8}
                       />
                     ) : (
                       <Connection 
                         start={layer.pos as [number, number, number]} 
                         end={layers[index + 1].pos as [number, number, number]} 
                         active={activeLayer === index || isTraining}
+                        weight={0.6}
                       />
                     )}
                   </>
