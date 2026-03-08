@@ -70,6 +70,7 @@ export function Scene() {
   const [showConnections, setShowConnections] = useState(true);
   const [showARMode, setShowARMode] = useState(false);
   const [showMatrices, setShowMatrices] = useState(true);
+  const [connectionThickness, setConnectionThickness] = useState(2.0);
 
   // Training Data Collection
   const [collectedData, setCollectedData] = useState<{ images: number[][][]; labels: number[] }>(trainingDataset);
@@ -639,7 +640,7 @@ export function Scene() {
                   size={layer.size as [number, number]} 
                   depth={layer.depth} 
                   label={layer.label}
-                  active={activeLayer === index}
+                  active={activeLayer === index || isTraining}
                   textureUrl={layer.type === 'input' ? selectedImage : undefined}
                   featureMaps={
                     layer.type === 'conv' ? processedData?.convMaps : 
@@ -668,7 +669,7 @@ export function Scene() {
                         layer2={layers[index + 1]}
                         active={activeLayer === index || isTraining}
                         trainingStep={trainingStep}
-                        weight={0.8}
+                        weight={0.8 * connectionThickness}
                         activations1={
                           layer.type === 'fc' ? processedData?.fcActivations : undefined
                         }
@@ -682,7 +683,7 @@ export function Scene() {
                         start={layer.pos as [number, number, number]} 
                         end={layers[index + 1].pos as [number, number, number]} 
                         active={activeLayer === index || isTraining}
-                        weight={0.6}
+                        weight={0.6 * connectionThickness}
                       />
                     )}
                   </>
@@ -743,6 +744,21 @@ export function Scene() {
             >
               <Network size={18} className={showConnections ? "text-blue-400" : "text-gray-400"} />
             </button>
+
+            {/* Connection Thickness Slider */}
+            {showConnections && (
+              <div className="flex items-center px-2 bg-white/5 rounded-full border border-white/5 h-8">
+                <input 
+                  type="range" 
+                  min="0.2" 
+                  max="5.0" 
+                  step="0.1"
+                  value={connectionThickness}
+                  onChange={(e) => setConnectionThickness(parseFloat(e.target.value))}
+                  className="w-16 h-1 accent-blue-500 bg-white/10 rounded-lg appearance-none cursor-pointer"
+                />
+              </div>
+            )}
             <button 
               onClick={() => setShowMatrices(!showMatrices)}
               className="p-1.5 rounded-full bg-white/5 hover:bg-white/20 transition-colors shadow-lg"

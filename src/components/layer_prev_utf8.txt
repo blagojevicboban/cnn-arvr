@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect } from 'react';
+﻿import { useRef, useState, useEffect } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Text, Box, Line } from '@react-three/drei';
 import * as THREE from 'three';
@@ -222,7 +222,7 @@ export function Layer({ position, type, size, depth, label, active, textureUrl, 
               <meshStandardMaterial 
                 color={active ? "#fef08a" : "#666"} 
                 emissive={active ? "#fef08a" : "#000"}
-                emissiveIntensity={active ? (0.8 + Math.sin(Date.now() * 0.01) * 0.4) : 0}
+                emissiveIntensity={active ? 0.8 : 0}
               />
             </mesh>
           );
@@ -257,7 +257,7 @@ export function Layer({ position, type, size, depth, label, active, textureUrl, 
                 <meshStandardMaterial 
                   color={active ? "#67e8f9" : "#888"} 
                   emissive={active ? "#67e8f9" : "#333"}
-                  emissiveIntensity={active ? (1.0 + Math.sin(Date.now() * 0.01 + i) * 0.5) : 0.2}
+                  emissiveIntensity={active ? 1.0 : 0.2}
                 />
               </mesh>
             );
@@ -283,13 +283,12 @@ export function Layer({ position, type, size, depth, label, active, textureUrl, 
         
         // Visualize activation intensity if available
         const activation = activations ? activations[i] : 0;
-        const baseIntensity = active ? 0.5 : 0.25; 
-        const pulseFactor = active ? 1.0 + Math.sin(Date.now() * 0.005) * 0.2 : 1.0;
-        const intensity = activations ? Math.min(1.8, baseIntensity + activation * 1.2) : (active ? 0.8 : 0.3);        
+        const baseIntensity = active ? 0.35 : 0.1; 
+        const intensity = activations ? Math.min(1.5, baseIntensity + activation * 1.0) : (active ? 0.8 : 0.1);        
         // For Output layer, show probability bars
         const isOutput = type === 'output';
         const isFC = type === 'fc';
-        const color = isOutput ? (activation > 0.5 ? "#4ade80" : "#fcd34d") : (isFC ? "#fef08a" : "#60a5fa");
+        const color = isOutput ? (activation > 0.5 ? "#4ade80" : "#fcd34d") : (isFC ? "#fde68a" : "#60a5fa");
         const outputLabel = outputLabels ? outputLabels[i] : `${i}`;
         
         neurons.push(
@@ -297,9 +296,9 @@ export function Layer({ position, type, size, depth, label, active, textureUrl, 
             <mesh>
               <sphereGeometry args={[radius, 16, 16]} />
               <meshStandardMaterial 
-                color={active ? color : "#aaa"} 
-                emissive={active ? color : "#444"}
-                emissiveIntensity={intensity * 2.5 * pulseFactor}
+                color={active ? color : "#999"} 
+                emissive={active ? color : "#222"}
+                emissiveIntensity={intensity * 2.0}
                 side={THREE.DoubleSide}
               />
             </mesh>

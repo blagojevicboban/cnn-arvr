@@ -38,6 +38,7 @@ let isTraining = false;
 let trainingHistory: { step: number; loss: number; accuracy: number }[] = [];
 let optimizer: any = null;
 let dataset: { images: any; labels: any } | null = null;
+let currentEpoch = 0;
 
 async function createModel() {
   // ensure worker-friendly backend (WebGL often unavailable inside workers)
@@ -130,7 +131,7 @@ async function prepareDataset(rawDataset: { images: any; labels: any }) {
   dataset = { images: imagesReshaped, labels };
 }
 
-async function trainStep(batchSize: number) {
+async function trainStep(batchSize: number, currentEpoch: number) {
   // TensorFlow already imported
   if (!dataset || !model || !isTraining) return;
 
@@ -173,7 +174,7 @@ async function trainStep(batchSize: number) {
     postMessage({ 
       type: 'trainingUpdate', 
       history: trainingHistory.slice(-1),
-      epoch: Math.floor(i / numSamples) + 1,
+      epoch: currentEpoch + 1,
       // Visualization data for this specific step
       visualization: {
         convData,
@@ -257,12 +258,12 @@ async function handleMessage(e: MessageEvent<WorkerMessage>) {
     await prepareDataset(rawDataset!);
     isTraining = true;
     trainingHistory = [];
+    currentEpoch = 0;
 
     for (let epoch = 0; epoch < epochs; epoch++) {
       if (!isTraining) break;
-      await trainStep(batchSize);
-      // Report epoch progress back to UI
-      postMessage({ type: 'trainingUpdate', history: trainingHistory, epoch: epoch + 1 });
+      currentEpoch = epoch;
+      await trainStep(batchSize, currentEpoch);
     }
 
   } else if (type === 'pauseTraining') {
@@ -271,7 +272,7 @@ async function handleMessage(e: MessageEvent<WorkerMessage>) {
   } else if (type === 'resumeTraining') {
     if (dataset && model) {
       isTraining = true;
-      await trainStep(32); // resume with default batch size
+      await trainStep(32, currentEpoch); // resume with default batch size and current epoch
     }
 
   } else if (type === 'saveCheckpoint') {

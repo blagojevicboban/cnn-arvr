@@ -215,7 +215,7 @@ export function DenseConnections({ layer1, layer2, active, trainingStep = 0, wei
       positions: new Float32Array(points),
       colors: new Float32Array(colorArray)
     };
-  }, [layer1, layer2, trainingStep, activations1, activations2]);
+  }, [layer1, layer2, trainingStep, activations1, activations2, active]);
 
   useFrame((state) => {
     if (linesRef.current && active) {
@@ -243,10 +243,10 @@ export function DenseConnections({ layer1, layer2, active, trainingStep = 0, wei
       <lineBasicMaterial 
         vertexColors 
         transparent 
-        opacity={(active ? 0.6 : 0.4) * weight} 
+        opacity={(active ? 0.3 : 0.2) * weight} 
         depthWrite={false}
         blending={THREE.AdditiveBlending}
-        linewidth={10}
+        linewidth={5 * weight}
       />
     </lineSegments>
   );

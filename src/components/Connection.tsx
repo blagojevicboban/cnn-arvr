@@ -67,7 +67,7 @@ export function Connection({ start, end, active, weight = 0.5 }: ConnectionProps
         ref={lineRef}
         points={points} 
         color={active ? "#4ade80" : "#333"} 
-        lineWidth={active ? 20 : 2}
+        lineWidth={(active ? 20 : 2) * weight}
         transparent 
         opacity={active ? 0.8 : 0.2} 
         dashed={true}
