@@ -306,11 +306,12 @@ export function Scene() {
                 <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
                   <h4 className="text-white font-semibold mb-2 flex items-center gap-2">
                     <Activity size={16} className="text-blue-400" />
-                    {lang === 'sr' ? 'Kritičan korak: TRENIRANJE' : 'Critical Step: TRAINING'}
+                    {lang === 'sr' ? 'Ključni korak: TRENIRANJE' : 'Critical Step: TRAINING'}
                   </h4>
-                  <p>{lang === 'sr' ? 
-                    'Mreža na početku ima nasumično znanje. Da bi prepoznala cifre, morate otvoriti Training Monitor i kliknuti na Start. Sačekajte da preciznost (Acc) dostigne bar 80%.' : 
-                    'The network starts with random knowledge. To recognize digits, open Training Monitor and click Start. Wait until accuracy (Acc) reaches at least 80%.'}
+                  <p className="text-xs">
+                    {lang === 'sr' ? 
+                      'Kliknite na Start u Monitoru. Pratite crvenu liniju (Loss) - ona mora pasti što niže (idealno ispod 0.1). Trening ide kroz epohe; sačekajte bar 10-20 epoha. Možete pauzirati trening i odmah testirati tastere.' : 
+                      'Click Start in Monitor. Watch the red line (Loss) - it must drop as low as possible (ideally below 0.1). Training runs in epochs; wait for 10-20 epochs. You can pause and test digits immediately.'}
                   </p>
                 </div>
                 <div className="bg-white/5 p-4 rounded-2xl border border-white/5">

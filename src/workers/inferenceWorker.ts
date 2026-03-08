@@ -91,7 +91,7 @@ async function prepareDataset(rawDataset: { images: any; labels: any }) {
   const labelsArr = new Int32Array(numSamples);
   
   const canvas = new OffscreenCanvas(28, 28);
-  const ctx = canvas.getContext('2d')!;
+  const ctx = canvas.getContext('2d', { willReadFrequently: true })!;
 
   for (let i = 0; i < numSamples; i++) {
     const digit = i % 10;
@@ -99,14 +99,23 @@ async function prepareDataset(rawDataset: { images: any; labels: any }) {
     
     ctx.fillStyle = 'black';
     ctx.fillRect(0, 0, 28, 28);
+    
+    // Add tiny bit of background noise to prevent overfitting
+    if (Math.random() > 0.5) {
+      for(let n=0; n<5; n++) {
+        ctx.fillStyle = `rgba(255,255,255,${Math.random()*0.1})`;
+        ctx.fillRect(Math.random()*28, Math.random()*28, 2, 2);
+      }
+    }
+
     ctx.fillStyle = 'white';
-    ctx.font = `${18 + Math.random() * 4}px Arial`;
+    ctx.font = `bold ${17 + Math.random() * 5}px Arial, sans-serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     
     ctx.save();
-    ctx.translate(14 + (Math.random()-0.5)*4, 14 + (Math.random()-0.5)*4);
-    ctx.rotate((Math.random() - 0.5) * 0.4);
+    ctx.translate(14 + (Math.random()-0.5)*3, 14 + (Math.random()-0.5)*3);
+    ctx.rotate((Math.random() - 0.5) * 0.3);
     ctx.fillText(digit.toString(), 0, 0);
     ctx.restore();
     
@@ -252,6 +261,8 @@ async function handleMessage(e: MessageEvent<WorkerMessage>) {
     for (let epoch = 0; epoch < epochs; epoch++) {
       if (!isTraining) break;
       await trainStep(batchSize);
+      // Report epoch progress back to UI
+      postMessage({ type: 'trainingUpdate', history: trainingHistory, epoch: epoch + 1 });
     }
 
   } else if (type === 'pauseTraining') {
