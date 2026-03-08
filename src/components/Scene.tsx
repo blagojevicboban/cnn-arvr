@@ -8,7 +8,8 @@ import { useState, useEffect, useRef } from 'react';
 import { Play, Pause, SkipForward, SkipBack, Upload, Settings, X, Activity, ChevronDown, ChevronUp } from 'lucide-react';
 import * as THREE from 'three';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { processImage } from '../utils/imageProcessor';
+import { processImage, startTraining, pauseTraining, resumeTraining, saveCheckpoint, loadCheckpoint, exportTrainingHistory } from '../utils/imageProcessor';
+import { trainingDataset } from '../utils/trainingDataset';
 
 const store = createXRStore();
 
@@ -61,19 +62,33 @@ export function Scene() {
   const [isInputPanelOpen, setIsInputPanelOpen] = useState(true);
   const [isTrainingPanelOpen, setIsTrainingPanelOpen] = useState(true);
 
-  // Training State
-  const [isTraining, setIsTraining] = useState(false);
-  const [trainingStep, setTrainingStep] = useState(0);
-  const [epoch, setEpoch] = useState(0);
-  const [trainingHistory, setTrainingHistory] = useState<{ step: number; loss: number; accuracy: number }[]>([
-    { step: 0, loss: 2.5, accuracy: 0.1 }
-  ]);
+  // Training Data Collection
+  const [collectedData, setCollectedData] = useState<{ images: number[][][]; labels: number[] }>({ images: [], labels: [] });
+  const [isDataCollectionMode, setIsDataCollectionMode] = useState(false);
+  const [currentLabel, setCurrentLabel] = useState(0);
+
+  useEffect(() => {
+    const worker = new Worker(new URL('../workers/inferenceWorker.ts', import.meta.url), { type: 'module' });
+    const handleTrainingUpdate = (e: MessageEvent<any>) => {
+      if (e.data.type === 'trainingUpdate') {
+        setTrainingHistory(prev => [...prev, ...e.data.history]);
+        setTrainingStep(prev => prev + 1);
+      }
+    };
+    worker.addEventListener('message', handleTrainingUpdate);
+    return () => worker.removeEventListener('message', handleTrainingUpdate);
+  }, []);
+
+  const [isProcessing, setIsProcessing] = useState(false);
 
   useEffect(() => {
     if (selectedImage) {
-      processImage(selectedImage).then(data => {
-        setProcessedData(data);
-      });
+      setIsProcessing(true);
+      processImage(selectedImage)
+        .then(data => {
+          setProcessedData(data);
+        })
+        .finally(() => setIsProcessing(false));
     }
   }, [selectedImage]);
 
@@ -88,57 +103,107 @@ export function Scene() {
     return () => clearInterval(interval);
   }, [isPlaying, isTraining]);
 
-  // Simulate training process
+  // Simulate training process (now real training)
   useEffect(() => {
-    let interval: NodeJS.Timeout;
     if (isTraining) {
-      interval = setInterval(() => {
-        setTrainingStep((prev) => prev + 1);
-        
-        // Simulate loss decreasing and accuracy increasing
-        setTrainingHistory((prev) => {
-          const step = prev.length + 1;
-          const progress = Math.min(step / 100, 1); // 0 to 1 over 100 steps
-          
-          // Noisy loss curve
-          const baseLoss = 2.5 * Math.exp(-3 * progress);
-          const loss = Math.max(0, baseLoss + (Math.random() - 0.5) * 0.2);
-          
-          // Noisy accuracy curve
-          const baseAcc = 0.1 + 0.85 * (1 - Math.exp(-2.5 * progress));
-          const accuracy = Math.min(1, Math.max(0, baseAcc + (Math.random() - 0.5) * 0.05));
-
-          const newHistory = [...prev, { step, loss, accuracy }];
-          // if (newHistory.length > 50) newHistory.shift(); // Keep last 50 points -> REMOVED to show full history
-          return newHistory;
-        });
-
-        if (trainingStep % 20 === 0) {
-            setEpoch(e => e + 1);
-        }
-
-      }, 100);
+      if (collectedData.images.length > 0) {
+        startTraining(collectedData, 10, 32);
+      } else {
+        alert('Please collect some training data first!');
+        setIsTraining(false);
+      }
+    } else {
+      pauseTraining();
     }
-    return () => clearInterval(interval);
-  }, [isTraining, trainingStep]);
+  }, [isTraining, collectedData]);
 
   const toggleTraining = () => {
     setIsTraining(!isTraining);
     setIsPlaying(false); // Stop inference animation when training starts
-    if (!isTraining) {
-        // Reset if starting fresh? No, let's continue training
-        if (trainingHistory.length === 0) {
-             setTrainingHistory([{ step: 0, loss: 2.5, accuracy: 0.1 }]);
-        }
+  };
+
+  const handlePauseResume = () => {
+    if (isTraining) {
+      pauseTraining();
+      setIsTraining(false);
+    } else {
+      resumeTraining();
+      setIsTraining(true);
     }
+  };
+
+  const handleSaveCheckpoint = async () => {
+    const checkpoint = await saveCheckpoint();
+    localStorage.setItem('cnnCheckpoint', checkpoint);
+    alert('Checkpoint saved!');
+  };
+
+  const handleLoadCheckpoint = async () => {
+    const checkpoint = localStorage.getItem('cnnCheckpoint');
+    if (checkpoint) {
+      await loadCheckpoint(checkpoint);
+      alert('Checkpoint loaded!');
+    } else {
+      alert('No checkpoint found!');
+    }
+  };
+
+  const handleExportHistory = async () => {
+    const history = await exportTrainingHistory();
+    const dataStr = JSON.stringify(history, null, 2);
+    const blob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'training_history.json';
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      const url = URL.createObjectURL(file);
-      setSelectedImage(url);
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const result = e.target?.result as string;
+        setSelectedImage(result);
+      };
+      reader.readAsDataURL(file);
     }
+  };
+
+  const handleAddToTrainingData = async (imageUrl: string, label: number) => {
+    const img = new Image();
+    img.crossOrigin = 'Anonymous';
+    img.src = imageUrl;
+    await new Promise<void>((res) => { img.onload = () => res(); });
+
+    const canvas = document.createElement('canvas');
+    canvas.width = 28;
+    canvas.height = 28;
+    const ctx = canvas.getContext('2d')!;
+    ctx.drawImage(img, 0, 0, 28, 28);
+    const imageData = ctx.getImageData(0, 0, 28, 28);
+
+    // Convert to grayscale 28x28 array
+    const pixels: number[][] = [];
+    for (let y = 0; y < 28; y++) {
+      const row: number[] = [];
+      for (let x = 0; x < 28; x++) {
+        const idx = (y * 28 + x) * 4;
+        const r = imageData.data[idx];
+        const g = imageData.data[idx + 1];
+        const b = imageData.data[idx + 2];
+        const gray = Math.round((r + g + b) / 3);
+        row.push(gray);
+      }
+      pixels.push(row);
+    }
+
+    setCollectedData(prev => ({
+      images: [...prev.images, pixels],
+      labels: [...prev.labels, label]
+    }));
   };
 
   const updateLayerConfig = (id: number, key: keyof LayerConfig, value: number) => {
@@ -171,6 +236,14 @@ export function Scene() {
           Enter VR
         </button>
       </div>
+
+      {isProcessing && (
+        <div className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none">
+          <div className="bg-black/60 text-white px-4 py-2 rounded-lg">
+            Processing image...
+          </div>
+        </div>
+      )}
 
       {/* Dataset Selection Panel */}
       <div className={`absolute top-4 right-4 z-10 flex flex-col gap-2 bg-black/50 backdrop-blur-md p-4 rounded-xl border border-white/10 w-64 transition-all duration-300 ${isInputPanelOpen ? 'max-h-[80vh]' : 'max-h-[60px] overflow-hidden'}`}>
@@ -300,6 +373,12 @@ export function Scene() {
                 >
                     {isTraining ? 'Stop' : 'Start'}
                 </button>
+                <button 
+                    onClick={handlePauseResume}
+                    className="px-3 py-1 rounded-md text-xs font-bold bg-yellow-500 hover:bg-yellow-600 text-white"
+                >
+                    {isTraining ? 'Pause' : 'Resume'}
+                </button>
                 <button onClick={() => setIsTrainingPanelOpen(!isTrainingPanelOpen)} className="text-gray-400 hover:text-white">
                     {isTrainingPanelOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
                 </button>
@@ -337,6 +416,69 @@ export function Scene() {
                 <span className="text-red-400">Loss: {trainingHistory[trainingHistory.length - 1]?.loss.toFixed(3) || '0.000'}</span>
                 <span className="text-green-400">Acc: {(trainingHistory[trainingHistory.length - 1]?.accuracy * 100).toFixed(1) || '0.0'}%</span>
             </div>
+            <div className="flex gap-2 mt-2">
+                <button onClick={handleSaveCheckpoint} className="px-2 py-1 rounded text-xs bg-blue-500 hover:bg-blue-600 text-white">Save Checkpoint</button>
+                <button onClick={handleLoadCheckpoint} className="px-2 py-1 rounded text-xs bg-purple-500 hover:bg-purple-600 text-white">Load Checkpoint</button>
+                <button onClick={handleExportHistory} className="px-2 py-1 rounded text-xs bg-gray-500 hover:bg-gray-600 text-white">Export History</button>
+            </div>
+        </div>
+      </div>
+
+      {/* Data Collection Panel */}
+      <div className={`absolute top-4 left-4 z-10 flex flex-col gap-2 bg-black/50 backdrop-blur-md p-4 rounded-xl border border-white/10 w-80 transition-all duration-300 ${isDataCollectionMode ? 'max-h-[400px]' : 'max-h-[60px] overflow-hidden'}`}>
+        <div className="flex justify-between items-center mb-2">
+          <h3 className="text-white font-semibold text-sm flex items-center gap-2">
+            <Upload size={16} className="text-green-400" />
+            Data Collection
+          </h3>
+          <button onClick={() => setIsDataCollectionMode(!isDataCollectionMode)} className="text-gray-400 hover:text-white">
+            {isDataCollectionMode ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+          </button>
+        </div>
+
+        <div className={`transition-opacity duration-300 ${isDataCollectionMode ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+          <div className="mb-4">
+            <label className="text-xs text-gray-400 block mb-2">Select Label (0-9)</label>
+            <div className="grid grid-cols-5 gap-1">
+              {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((digit) => (
+                <button
+                  key={digit}
+                  onClick={() => setCurrentLabel(digit)}
+                  className={`p-2 rounded text-sm font-bold transition-colors ${
+                    currentLabel === digit ? 'bg-blue-500 text-white' : 'bg-white/10 hover:bg-white/20 text-white'
+                  }`}
+                >
+                  {digit}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="mb-4">
+            <div className="text-xs text-gray-400 mb-2">Collected Data: {collectedData.images.length} samples</div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => {
+                  if (selectedImage) {
+                    handleAddToTrainingData(selectedImage, currentLabel);
+                  }
+                }}
+                className="flex-1 bg-green-500 hover:bg-green-600 text-white py-2 rounded text-sm transition-colors"
+              >
+                Add Current Image
+              </button>
+              <button
+                onClick={() => setCollectedData({ images: [], labels: [] })}
+                className="bg-red-500 hover:bg-red-600 text-white py-2 px-3 rounded text-sm transition-colors"
+              >
+                Clear
+              </button>
+            </div>
+          </div>
+
+          <div className="text-xs text-gray-400">
+            <p>Upload images or use sample images above. Each image will be converted to 28x28 grayscale and labeled with the selected digit.</p>
+          </div>
         </div>
       </div>
 
