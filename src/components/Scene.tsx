@@ -287,16 +287,16 @@ export function Scene() {
 
       {/* Help Modal */}
       {showHelp && (
-        <div className="absolute inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 text-left">
-          <div className="bg-black/80 border border-white/20 p-8 rounded-3xl max-w-2xl shadow-2xl animate-in zoom-in-95 duration-300">
+        <div className="absolute inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-2 sm:p-4 text-left pointer-events-auto">
+          <div className="bg-black/80 border border-white/20 p-4 sm:p-8 rounded-2xl sm:rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl animate-in zoom-in-95 duration-300 custom-scrollbar">
             <div className="flex justify-between items-start mb-6">
               <div className="flex items-center gap-3">
-                <div className="bg-blue-500/20 p-2 rounded-xl">
-                  <HelpCircle size={28} className="text-blue-400" />
+                <div className="bg-blue-500/20 p-1.5 sm:p-2 rounded-xl">
+                  <HelpCircle size={22} className="text-blue-400 sm:w-[28px] sm:h-[28px]" />
                 </div>
                 <div className="text-left">
-                  <h2 className="text-2xl font-bold text-white tracking-tight">{lang === 'sr' ? 'MNIST CNN Vodič' : 'MNIST CNN Guide'}</h2>
-                  <p className="text-gray-400 text-sm">{lang === 'sr' ? 'Kako koristiti 3D simulaciju neuronske mreže' : 'How to use the 3D Neural Network simulation'}</p>
+                  <h2 className="text-lg sm:text-2xl font-bold text-white tracking-tight leading-none sm:leading-normal">{lang === 'sr' ? 'MNIST CNN Vodič' : 'MNIST CNN Guide'}</h2>
+                  <p className="text-gray-400 text-[10px] sm:text-sm">{lang === 'sr' ? 'Kako koristiti 3D simulaciju' : 'How to use simulation'}</p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
@@ -370,9 +370,9 @@ export function Scene() {
 
             <button 
               onClick={() => setShowHelp(false)}
-              className="w-full bg-blue-600 hover:bg-blue-500 text-white py-3 rounded-2xl font-bold transition-all shadow-lg shadow-blue-600/20 active:scale-95"
+              className="w-full bg-blue-600 hover:bg-blue-500 text-white py-2.5 sm:py-3 rounded-xl sm:rounded-2xl text-xs sm:text-base font-bold transition-all shadow-lg shadow-blue-600/20 active:scale-95 mt-4"
             >
-              {lang === 'sr' ? 'Razumem, pokreni simulaciju!' : 'Got it, start simulation!'}
+              {lang === 'sr' ? 'Razumem, pokreni!' : 'Got it, start!'}
             </button>
           </div>
         </div>
@@ -692,8 +692,12 @@ export function Scene() {
           <OrbitControls makeDefault />
       </Canvas>
       
-      <div className={`absolute bottom-6 left-1/2 -translate-x-1/2 flex flex-col items-center gap-3 w-full max-w-2xl px-4 transition-all duration-700 pointer-events-none ${showARMode ? 'opacity-20 scale-95 translate-y-12 blur-sm' : 'opacity-100'}`}>
-        <div className="bg-black/60 backdrop-blur-lg p-3 rounded-2xl border border-white/10 text-center w-full pointer-events-auto shadow-2xl">
+      <div className={`absolute bottom-6 left-1/2 -translate-x-1/2 flex flex-col items-center gap-3 w-full max-w-2xl px-4 transition-all duration-500 pointer-events-none z-[60]`}>
+        <div className={`p-3 rounded-2xl border transition-all duration-500 text-center w-full pointer-events-auto shadow-2xl ${
+          showARMode 
+            ? 'bg-blue-950/20 backdrop-blur-md border-blue-500/30 shadow-blue-500/10' 
+            : 'bg-black/60 backdrop-blur-lg border-white/10'
+        }`}>
           <h1 className="text-sm font-bold mb-2 uppercase tracking-widest text-blue-400">MNIST CNN Simulation</h1>
           
           <div className="flex flex-wrap justify-center items-center gap-2 mb-3">
