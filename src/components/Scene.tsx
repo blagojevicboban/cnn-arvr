@@ -4,7 +4,7 @@ import { Layer } from './Layer';
 import { Connection } from './Connection';
 import { DenseConnections } from './DenseConnections';
 import { useState, useEffect, useRef } from 'react';
-import { Play, Pause, SkipForward, SkipBack, Upload, Settings, X, Activity, ChevronDown, ChevronUp, Eye, EyeOff, Grid3x3, Link, LayoutDashboard, HelpCircle, Info } from 'lucide-react';
+import { Play, Pause, SkipForward, SkipBack, Upload, Settings, X, Activity, ChevronDown, ChevronUp, Eye, EyeOff, Grid3x3, Link, LayoutDashboard, HelpCircle, Info, Box } from 'lucide-react';
 import * as THREE from 'three';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { processImage, startTraining, pauseTraining, resumeTraining, saveCheckpoint, loadCheckpoint, exportTrainingHistory, getWorker, tensorDataToMaps } from '../utils/imageProcessor';
@@ -65,9 +65,10 @@ export function Scene() {
   const [showDataPanel, setShowDataPanel] = useState(false);
   const [showHelp, setShowHelp] = useState(true);
   const [lang, setLang] = useState<'sr' | 'en'>('sr');
-  const [showStars, setShowStars] = useState(false);
+  const [showStars, setShowStars] = useState(true);
   const [showGrid, setShowGrid] = useState(false);
   const [showConnections, setShowConnections] = useState(true);
+  const [showARMode, setShowARMode] = useState(false);
 
   // Training Data Collection
   const [collectedData, setCollectedData] = useState<{ images: number[][][]; labels: number[] }>(trainingDataset);
@@ -264,6 +265,23 @@ export function Scene() {
           <div className="bg-black/60 text-white px-4 py-2 rounded-lg">
             Processing MNIST digit...
           </div>
+        </div>
+      )}
+
+      {/* AR/VR HUD Overlay */}
+      {showARMode && (
+        <div className="absolute inset-0 z-50 pointer-events-none overflow-hidden border-[10px] border-blue-500/10 animate-pulse">
+          <div className="absolute top-10 left-10 text-blue-400 font-mono text-[10px] space-y-1">
+            <div className="flex items-center gap-2"><div className="w-2 h-2 bg-blue-500 animate-ping"></div> SYSTEM READY</div>
+            <div>NET_SCAN: ACTIVE</div>
+            <div>LATENCY: 12ms</div>
+            <div>MODE: IMMERSIVE_3D</div>
+          </div>
+          <div className="absolute bottom-10 right-10 text-blue-400/50 font-mono text-[10px]">
+            [ HOLO_MATRIX_v1.0.0 ]
+          </div>
+          {/* Subtle scanline effect */}
+          <div className="absolute inset-0 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.1)_50%),linear-gradient(90deg,rgba(255,0,0,0.03),rgba(0,255,0,0.01),rgba(0,0,255,0.03))] bg-[length:100%_2px,3px_100%] pointer-events-none opacity-20"></div>
         </div>
       )}
 
@@ -477,16 +495,16 @@ export function Scene() {
 
       {/* Training Panel */}
       {showTrainingPanel && (
-        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10 flex flex-col gap-2 bg-black/60 backdrop-blur-xl p-4 rounded-xl border border-white/20 w-80 shadow-2xl pointer-events-auto animate-in fade-in slide-in-from-top-4 duration-300">
-          <div className="flex justify-between items-center mb-2 border-b border-white/10 pb-2">
-              <h3 className="text-white font-bold text-sm flex items-center gap-2 tracking-wide">
-                  <Activity size={16} className="text-blue-400" />
+        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10 flex flex-col gap-1.5 bg-black/70 backdrop-blur-xl p-3 rounded-xl border border-white/10 w-80 shadow-2xl pointer-events-auto animate-in fade-in slide-in-from-top-4 duration-300">
+          <div className="flex justify-between items-center mb-1.5 border-b border-white/10 pb-1.5">
+              <h3 className="text-white font-bold text-[11px] flex items-center gap-2 tracking-wider">
+                  <Activity size={14} className="text-blue-400" />
                   {lang === 'sr' ? 'TRENING MONITOR' : 'TRAINING MONITOR'}
               </h3>
-              <div className="flex gap-2">
+              <div className="flex gap-1.5">
                   <button 
                       onClick={toggleTraining}
-                      className={`px-3 py-1 rounded-md text-xs font-bold transition-all shadow-lg ${
+                      className={`px-2.5 py-0.5 rounded-md text-[11px] font-bold transition-all shadow-lg ${
                           isTraining ? 'bg-red-500 hover:bg-red-600 shadow-red-500/20 text-white' : 'bg-green-500 hover:bg-green-600 shadow-green-500/20 text-white'
                       }`}
                   >
@@ -494,51 +512,51 @@ export function Scene() {
                   </button>
                   <button 
                       onClick={handlePauseResume}
-                      className="px-3 py-1 rounded-md text-xs font-bold bg-yellow-500 hover:bg-yellow-600 shadow-yellow-500/20 text-white transition-all"
+                      className="px-2.5 py-0.5 rounded-md text-[11px] font-bold bg-yellow-500 hover:bg-yellow-600 shadow-yellow-500/20 text-white transition-all"
                   >
                       {isTraining ? 'Pause' : 'Resume'}
                   </button>
               </div>
           </div>
 
-          <div className="opacity-100">
-            <div className="grid grid-cols-2 gap-2 mb-2">
-                <div className="bg-white/5 p-2 rounded-lg">
-                    <div className="text-xs text-gray-400">Epoch</div>
-                    <div className="text-lg font-mono text-white">{epoch}</div>
+          <div className="opacity-100 flex flex-col gap-1.5">
+            <div className="grid grid-cols-2 gap-1.5">
+                <div className="bg-white/5 p-1.5 rounded-lg flex flex-col items-center">
+                    <div className="text-[10px] text-gray-500">Epoch</div>
+                    <div className="text-sm font-mono font-bold text-white">{epoch}</div>
                 </div>
-                <div className="bg-white/5 p-2 rounded-lg">
-                    <div className="text-xs text-gray-400">Step</div>
-                    <div className="text-lg font-mono text-white">{trainingStep}</div>
+                <div className="bg-white/5 p-1.5 rounded-lg flex flex-col items-center">
+                    <div className="text-[10px] text-gray-500">Step</div>
+                    <div className="text-sm font-mono font-bold text-white">{trainingStep}</div>
                 </div>
             </div>
 
-            <div className="h-32 w-full" style={{ minHeight: '128px' }}>
-                <ResponsiveContainer width="100%" height={128}>
+            <div className="h-20 w-full" style={{ minHeight: '80px' }}>
+                <ResponsiveContainer width="100%" height={80}>
                     <LineChart data={trainingHistory}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#333" />
+                        <CartesianGrid strokeDasharray="2 2" stroke="#222" />
                         <XAxis dataKey="step" hide />
                         <YAxis domain={[0, 3]} width={0} />
                         <Tooltip 
-                            contentStyle={{ backgroundColor: '#000', border: '1px solid #333', fontSize: '12px' }}
+                            contentStyle={{ backgroundColor: '#000', border: '1px solid #333', fontSize: '10px' }}
                             itemStyle={{ padding: 0 }}
                         />
-                        <Line type="monotone" dataKey="loss" stroke="#ef4444" strokeWidth={2} dot={false} isAnimationActive={false} />
-                        <Line type="monotone" dataKey="accuracy" stroke="#22c55e" strokeWidth={2} dot={false} isAnimationActive={false} />
+                        <Line type="monotone" dataKey="loss" stroke="#ef4444" strokeWidth={1.5} dot={false} isAnimationActive={false} />
+                        <Line type="monotone" dataKey="accuracy" stroke="#22c55e" strokeWidth={1.5} dot={false} isAnimationActive={false} />
                     </LineChart>
                 </ResponsiveContainer>
             </div>
-            <div className="flex justify-between text-xs px-1">
+            <div className="flex justify-between text-[10px] px-1 font-mono">
                 <span className="text-red-400">Loss: {trainingHistory[trainingHistory.length - 1]?.loss.toFixed(3) || '0.000'}</span>
                 <span className="text-green-400">Acc: {(trainingHistory[trainingHistory.length - 1]?.accuracy * 100).toFixed(1) || '0.0'}%</span>
             </div>
-            <div className="flex gap-1.5 mt-2">
-                <button onClick={handleSaveCheckpoint} className="flex-1 px-2 py-1.5 rounded text-[10px] bg-blue-600/30 hover:bg-blue-600/50 text-blue-100 border border-blue-500/30 transition-colors">Save</button>
-                <button onClick={handleLoadCheckpoint} className="flex-1 px-2 py-1.5 rounded text-[10px] bg-purple-600/30 hover:bg-purple-600/50 text-purple-100 border border-purple-500/30 transition-colors">Load</button>
-                <button onClick={handleExportHistory} className="flex-1 px-2 py-1.5 rounded text-[10px] bg-gray-600/30 hover:bg-gray-600/50 text-gray-100 border border-gray-500/30 transition-colors">Export</button>
+            <div className="flex gap-1">
+                <button onClick={handleSaveCheckpoint} className="flex-1 px-1 py-1 rounded text-[9px] bg-blue-600/30 hover:bg-blue-600/50 text-blue-100 border border-blue-500/20 transition-colors">Save</button>
+                <button onClick={handleLoadCheckpoint} className="flex-1 px-1 py-1 rounded text-[9px] bg-purple-600/30 hover:bg-purple-600/50 text-purple-100 border border-purple-500/20 transition-colors">Load</button>
+                <button onClick={handleExportHistory} className="flex-1 px-1 py-1 rounded text-[9px] bg-gray-600/30 hover:bg-gray-600/50 text-gray-100 border border-gray-500/20 transition-colors">Export</button>
             </div>
+          </div>
         </div>
-      </div>
       )}
 
       {/* Data Collection Panel */}
@@ -674,11 +692,11 @@ export function Scene() {
           <OrbitControls makeDefault />
       </Canvas>
       
-      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex flex-col items-center gap-3 w-full max-w-lg px-4 pointer-events-none">
-        <div className="bg-black/60 backdrop-blur-lg p-3 rounded-xl border border-white/10 text-center w-full pointer-events-auto shadow-2xl">
-          <h1 className="text-lg font-bold mb-2">MNIST CNN Simulation</h1>
+      <div className={`absolute bottom-6 left-1/2 -translate-x-1/2 flex flex-col items-center gap-3 w-full max-w-2xl px-4 transition-all duration-700 pointer-events-none ${showARMode ? 'opacity-20 scale-95 translate-y-12 blur-sm' : 'opacity-100'}`}>
+        <div className="bg-black/60 backdrop-blur-lg p-3 rounded-2xl border border-white/10 text-center w-full pointer-events-auto shadow-2xl">
+          <h1 className="text-sm font-bold mb-2 uppercase tracking-widest text-blue-400">MNIST CNN Simulation</h1>
           
-          <div className="flex justify-center items-center gap-3 mb-3">
+          <div className="flex flex-wrap justify-center items-center gap-2 mb-3">
             <button 
               onClick={handlePrev}
               className="p-1.5 rounded-full bg-white/5 hover:bg-white/20 transition-colors"
@@ -742,6 +760,14 @@ export function Scene() {
             </button>
             <div className="w-[1px] h-4 bg-white/10 mx-1" />
             <button 
+              onClick={() => setShowARMode(!showARMode)}
+              className="p-1.5 rounded-full bg-white/5 hover:bg-white/20 transition-colors flex items-center gap-1"
+              title="AR/VR Mode"
+            >
+              <Box size={18} className={showARMode ? "text-blue-400" : "text-gray-400"} />
+              <span className="text-[10px] text-gray-400 font-bold pr-1">AR/VR</span>
+            </button>
+            <button 
               onClick={() => setShowHelp(!showHelp)}
               className="p-1.5 rounded-full bg-blue-500/20 hover:bg-blue-500/40 transition-colors"
               title="Help & Guide"
@@ -767,6 +793,10 @@ export function Scene() {
                 {layer.label.split(' ')[0]}
               </div>
             ))}
+          </div>
+          
+          <div className="absolute bottom-2 right-4 text-[10px] text-gray-600 pointer-events-none opacity-50">
+            v1.0.0
           </div>
         </div>
       </div>

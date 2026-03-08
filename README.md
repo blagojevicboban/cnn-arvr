@@ -1,11 +1,11 @@
 <div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
+<img width="1200" alt="CNN 3D Vizuelizacija Hero" src="public/screenshot.png" />
 </div>
 
-# Run and deploy your AI Studio app
+# CNN 3D Vizuelizacija
 
-This contains everything you need to run your app locally.
-Checkout the app on:
+Sve što vam je potrebno za lokalno pokretanje aplikacije.
+Proverite aplikaciju na:
 https://blagojevicboban.github.io/cnn-arvr/
 
 View your app in AI Studio: https://ai.studio/apps/3e02985d-3179-4aa2-ac17-a85437ace644

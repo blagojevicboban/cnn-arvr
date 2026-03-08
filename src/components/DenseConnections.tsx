@@ -19,7 +19,7 @@ interface DenseConnectionsProps {
   activations2?: number[];
 }
 
-export function DenseConnections({ layer1, layer2, active, trainingStep = 0, weight = 0.5, activations1, activations2 }: DenseConnectionsProps) {
+export function DenseConnections({ layer1, layer2, active, trainingStep = 0, weight = 1.0, activations1, activations2 }: DenseConnectionsProps) {
   const linesRef = useRef<THREE.LineSegments>(null);
   
   const { positions, colors } = useMemo(() => {
@@ -92,8 +92,8 @@ export function DenseConnections({ layer1, layer2, active, trainingStep = 0, wei
           if (active) {
             const seed = i * count2 + j;
             const hue = 0.35 + ((Math.sin(seed + trainingStep * 0.5) + 1) / 2) * 0.15; // Cyan to Green
-            const light = 0.2 + strength * 0.6;
-            color = new THREE.Color().setHSL(hue, 0.7 + strength * 0.3, light);
+            const light = 0.4 + strength * 0.6;
+            color = new THREE.Color().setHSL(hue, 0.8 + strength * 0.2, light);
           } else {
             color = new THREE.Color(0x333333); 
           }
@@ -121,8 +121,8 @@ export function DenseConnections({ layer1, layer2, active, trainingStep = 0, wei
                 if (active) {
                   const seed = i * layer2.size[0] + j;
                   const hue = 0.55 + ((Math.sin(seed + trainingStep * 0.5) + 1) / 2) * 0.1; // Blue to cyan
-                  const light = 0.2 + strength * 0.5;
-                  color = new THREE.Color().setHSL(hue, 0.7 + strength * 0.3, light);
+                  const light = 0.4 + strength * 0.6;
+                  color = new THREE.Color().setHSL(hue, 0.8 + strength * 0.2, light);
                 } else {
                   color = new THREE.Color(0x333333); 
                 }
@@ -173,9 +173,9 @@ export function DenseConnections({ layer1, layer2, active, trainingStep = 0, wei
                         if (active) {
                             const seed = inputNeuronIdx * layer2.depth + mapIdx;
                             const hue = 0.08 + ((Math.sin(seed + trainingStep * 0.5) + 1) / 2) * 0.1; // Orange-ish
-                            color = new THREE.Color().setHSL(hue, 0.8, 0.5);
+                            color = new THREE.Color().setHSL(hue, 0.9, 0.7);
                         } else {
-                            color = new THREE.Color(0x888888); // Gray
+                            color = new THREE.Color(0x666666); // Lighter gray
                         }
                         
                         colorArray.push(color.r, color.g, color.b);
@@ -257,10 +257,10 @@ export function DenseConnections({ layer1, layer2, active, trainingStep = 0, wei
       <lineBasicMaterial 
         vertexColors 
         transparent 
-        opacity={(active ? 0.3 : 0.2) * weight} 
+        opacity={(active ? 0.6 : 0.4) * weight} 
         depthWrite={false}
         blending={THREE.AdditiveBlending}
-        linewidth={5}
+        linewidth={10}
       />
     </lineSegments>
   );

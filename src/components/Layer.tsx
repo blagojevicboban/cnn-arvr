@@ -212,7 +212,11 @@ export function Layer({ position, type, size, depth, label, active, textureUrl, 
           neurons.push(
             <mesh key={`in-${r}-${c}`} position={[0, start + c * spacing, start + r * spacing]}>
               <sphereGeometry args={[radius, 8, 8]} />
-              <meshStandardMaterial color={active ? "#fbbf24" : "#444"} />
+              <meshStandardMaterial 
+                color={active ? "#fef08a" : "#666"} 
+                emissive={active ? "#fef08a" : "#000"}
+                emissiveIntensity={active ? 0.8 : 0}
+              />
             </mesh>
           );
         }
@@ -242,7 +246,11 @@ export function Layer({ position, type, size, depth, label, active, textureUrl, 
             neurons.push(
               <mesh key={`map-${i}-n-${r}-${c}`} position={[0.1, y, z]}>
                 <sphereGeometry args={[radius, 8, 8]} />
-                <meshStandardMaterial color={active ? "#4ade80" : "#444"} />
+                <meshStandardMaterial 
+                  color={active ? "#67e8f9" : "#666"} 
+                  emissive={active ? "#67e8f9" : "#000"}
+                  emissiveIntensity={active ? 0.4 : 0}
+                />
               </mesh>
             );
           }
@@ -273,7 +281,7 @@ export function Layer({ position, type, size, depth, label, active, textureUrl, 
         // For Output layer, show probability bars
         const isOutput = type === 'output';
         const isFC = type === 'fc';
-        const color = isOutput ? (activation > 0.5 ? "#22c55e" : "#facc15") : (isFC ? "#fbbf24" : "#f87171");
+        const color = isOutput ? (activation > 0.5 ? "#4ade80" : "#fcd34d") : (isFC ? "#fde68a" : "#60a5fa");
         const outputLabel = outputLabels ? outputLabels[i] : `${i}`;
         
         neurons.push(
@@ -281,9 +289,9 @@ export function Layer({ position, type, size, depth, label, active, textureUrl, 
             <mesh>
               <sphereGeometry args={[radius, 16, 16]} />
               <meshStandardMaterial 
-                color={active ? color : "#444"} 
+                color={active ? color : "#666"} 
                 emissive={active ? color : "#000"}
-                emissiveIntensity={intensity}
+                emissiveIntensity={intensity * 1.5}
                 side={THREE.DoubleSide}
               />
             </mesh>
