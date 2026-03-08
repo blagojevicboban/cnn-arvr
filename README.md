@@ -8,8 +8,6 @@ Everything you need to run the application locally.
 Check the application at:
 https://blagojevicboban.github.io/cnn-arvr/
 
-View your app in AI Studio: https://ai.studio/apps/3e02985d-3179-4aa2-ac17-a85437ace644
-
 ## Run Locally
 
 **Prerequisites:**  Node.js
