@@ -19,9 +19,16 @@ export default defineConfig(({mode}) => {
     worker: {
       format: 'es',
     },
+    optimizeDeps: {
+      // ensure the dev server pre-bundles TensorFlow so that
+      // worker imports can be resolved correctly
+      include: ['@tensorflow/tfjs'],
+    },
     build: {
       rollupOptions: {
-        external: (id) => id.includes('@tensorflow'),
+        // do not mark tfjs as external; we want it bundled (or
+        // split into a manual chunk) rather than leaving an
+        // unresolved import that blows up the dev server
         output: {
           manualChunks: (id) => {
             if (id.includes('@tensorflow')) {

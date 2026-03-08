@@ -67,6 +67,12 @@ export function Scene() {
   const [isDataCollectionMode, setIsDataCollectionMode] = useState(false);
   const [currentLabel, setCurrentLabel] = useState(0);
 
+  // Training State
+  const [isTraining, setIsTraining] = useState(false);
+  const [trainingHistory, setTrainingHistory] = useState<{ step: number; loss: number; accuracy: number }[]>([]);
+  const [trainingStep, setTrainingStep] = useState(0);
+  const [epoch, setEpoch] = useState(0);
+
   useEffect(() => {
     const worker = new Worker(new URL('../workers/inferenceWorker.ts', import.meta.url), { type: 'module' });
     const handleTrainingUpdate = (e: MessageEvent<any>) => {

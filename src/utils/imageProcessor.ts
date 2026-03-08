@@ -71,7 +71,11 @@ export async function processImage(imageUrl: string) {
   });
 }
 
-export async function startTraining(dataset: { images: number[][][]; labels: number[] }, epochs: number = 10, batchSize: number = 32) {
+export async function startTraining(dataset: { images: any[]; labels: any[] }, epochs: number = 10, batchSize: number = 32) {
+  console.log('startTraining called; images=', dataset?.images?.length, 'labels=', dataset?.labels?.length);
+  if (dataset && dataset.images && dataset.images.length > 0) {
+    console.log('first sample', dataset.images[0]);
+  }
   const worker = getWorker();
   worker.postMessage({ type: 'startTraining', dataset, epochs, batchSize });
 }
