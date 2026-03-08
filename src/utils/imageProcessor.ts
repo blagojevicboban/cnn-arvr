@@ -5,14 +5,15 @@
 
 let inferenceWorker: Worker | null = null;
 
-function getWorker() {
+export function getWorker() {
   if (!inferenceWorker) {
     inferenceWorker = new Worker(new URL('../workers/inferenceWorker.ts', import.meta.url), { type: 'module' });
   }
   return inferenceWorker;
 }
 
-function tensorDataToMaps(data: Float32Array, shape: [number, number, number, number]): string[] {
+export function tensorDataToMaps(data: Float32Array, shape: number[]): string[] {
+  if (!shape || !Array.isArray(shape)) return [];
   const [, h, w, c] = shape;
   const maps: string[] = [];
   for (let k = 0; k < c; k++) {
@@ -57,14 +58,19 @@ export async function processImage(imageUrl: string) {
   return new Promise<{
     convMaps: string[];
     poolMaps: string[];
+    fcActivations: number[];
     outputProbs: number[];
   }>((resolve) => {
     const listener = (e: MessageEvent<any>) => {
-      worker.removeEventListener('message', listener);
-      const { convData, convShape, poolData, poolShape, outputProbs } = e.data;
-      const convMaps = tensorDataToMaps(convData, convShape);
-      const poolMaps = tensorDataToMaps(poolData, poolShape);
-      resolve({ convMaps, poolMaps, outputProbs: Array.from(outputProbs) });
+      // Filter out training updates or other non-inference messages
+      if (e.data.type === 'inference') {
+        worker.removeEventListener('message', listener);
+        const { convData, convShape, poolData, poolShape, fcData, outputProbs } = e.data;
+        if (!convShape) return;
+        const convMaps = tensorDataToMaps(convData, convShape);
+        const poolMaps = tensorDataToMaps(poolData, poolShape);
+        resolve({ convMaps, poolMaps, fcActivations: fcData || [], outputProbs: Array.from(outputProbs) });
+      }
     };
     worker.addEventListener('message', listener);
     worker.postMessage({ type: 'inference', imageUrl });

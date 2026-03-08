@@ -16,6 +16,7 @@ interface WorkerMessage {
   dataset?: { images: number[][][]; labels: number[] }; // small dataset for training
   epochs?: number;
   batchSize?: number;
+  checkpoint?: string;
 }
 
 interface WorkerResult {
@@ -24,13 +25,15 @@ interface WorkerResult {
   convShape?: [number, number, number, number];
   poolData?: Float32Array;
   poolShape?: [number, number, number, number];
+  fcData?: number[];
   outputProbs?: Float32Array;
   history?: { step: number; loss: number; accuracy: number }[];
   checkpoint?: string; // JSON string of model weights
 }
 
 
-let model: any = null; // Use any to avoid type issues with lazy loading
+let model: any = null; 
+let trainModel: any = null; 
 let isTraining = false;
 let trainingHistory: { step: number; loss: number; accuracy: number }[] = [];
 let optimizer: any = null;
@@ -46,54 +49,75 @@ async function createModel() {
   // TensorFlow is available via the static import above
   const input = tf.input({ shape: [28, 28, 1] });
   const conv1 = tf.layers
-    .conv2d({ filters: 6, kernelSize: 5, strides: 1, activation: 'relu', padding: 'valid' })
+    .conv2d({ 
+      filters: 8, 
+      kernelSize: 3, 
+      strides: 1, 
+      activation: 'relu', 
+      padding: 'same',
+      kernelRegularizer: tf.regularizers.l2({ l2: 0.001 })
+    })
     .apply(input) as any;
+  const bn1 = tf.layers.batchNormalization().apply(conv1) as any;
   const pool1 = tf.layers
-    .maxPooling2d({ poolSize: [2, 2], strides: [2, 2], padding: 'valid' })
-    .apply(conv1) as any;
+    .maxPooling2d({ poolSize: [2, 2], strides: [2, 2] })
+    .apply(bn1) as any;
+    
   const flatten = tf.layers.flatten().apply(pool1) as any;
-  const fc = tf.layers.dense({ units: 120, activation: 'relu' }).apply(flatten) as any;
-  const output = tf.layers.dense({ units: 10, activation: 'softmax' }).apply(fc) as any;
+  const fc = tf.layers.dense({ 
+    units: 64, 
+    activation: 'relu',
+    kernelRegularizer: tf.regularizers.l2({ l2: 0.001 })
+  }).apply(flatten) as any;
+  const bn2 = tf.layers.batchNormalization().apply(fc) as any;
+  const dropout = tf.layers.dropout({ rate: 0.2 }).apply(bn2) as any;
+  const output = tf.layers.dense({ units: 10, activation: 'softmax' }).apply(dropout) as any;
 
-  model = tf.model({ inputs: input, outputs: [conv1, pool1, output] });
-  optimizer = tf.train.adam(0.001);
-  model.compile({ optimizer, loss: 'categoricalCrossentropy', metrics: ['accuracy'] });
+  model = tf.model({ inputs: input, outputs: [conv1, pool1, fc, output] });
+  trainModel = tf.model({ inputs: input, outputs: output });
+  optimizer = tf.train.adam(0.0005); 
+  trainModel.compile({ optimizer, loss: 'categoricalCrossentropy', metrics: ['accuracy'] });
 }
 
 async function prepareDataset(rawDataset: { images: any; labels: any }) {
-  // TensorFlow already imported
-  if (!rawDataset || !Array.isArray(rawDataset.images) || rawDataset.images.length === 0) {
-    console.error('prepareDataset received bad dataset', rawDataset);
-    throw new Error('Invalid training dataset supplied to worker');
+  if (dataset) {
+    dataset.images.dispose();
+    dataset.labels.dispose();
   }
 
-  // enforce each sample is a 2D array of numbers
-  const cleanedImages: number[][][] = rawDataset.images.map((img: any, idx: number) => {
-    if (!Array.isArray(img)) {
-      console.warn(`sample ${idx} is not an array`, img);
-      return [];
+  // GENERATE 1000 HIGH QUALITY SAMPLES USING CANVAS
+  const numSamples = 1000;
+  const flattened = new Float32Array(numSamples * 784);
+  const labelsArr = new Int32Array(numSamples);
+  
+  const canvas = new OffscreenCanvas(28, 28);
+  const ctx = canvas.getContext('2d')!;
+
+  for (let i = 0; i < numSamples; i++) {
+    const digit = i % 10;
+    labelsArr[i] = digit;
+    
+    ctx.fillStyle = 'black';
+    ctx.fillRect(0, 0, 28, 28);
+    ctx.fillStyle = 'white';
+    ctx.font = `${18 + Math.random() * 4}px Arial`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    
+    ctx.save();
+    ctx.translate(14 + (Math.random()-0.5)*4, 14 + (Math.random()-0.5)*4);
+    ctx.rotate((Math.random() - 0.5) * 0.4);
+    ctx.fillText(digit.toString(), 0, 0);
+    ctx.restore();
+    
+    const imgData = ctx.getImageData(0, 0, 28, 28).data;
+    for (let j = 0; j < 784; j++) {
+      flattened[i * 784 + j] = imgData[j * 4] / 255;
     }
-    return img.map((row: any, rIdx: number) => {
-      if (!Array.isArray(row)) {
-        console.warn(`sample ${idx} row ${rIdx} not array`, row);
-        return [];
-      }
-      return row.map((v: any) => (typeof v === 'number' ? v : 0));
-    });
-  });
-
-  // validate dimensions
-  const dimsOk = cleanedImages.every((img) => img.length === 28 && img.every((row) => row.length === 28));
-  if (!dimsOk) {
-    console.error('cleanedImages has wrong dimensions', cleanedImages.map(i=>i.length));
-    throw new Error('Training images must be 28x28 arrays');
   }
 
-  // ensure shape [N,28,28,1]
-  const imagesTensor = tf.tensor3d(cleanedImages as any);
-  const imagesReshaped = imagesTensor.reshape([cleanedImages.length, 28, 28, 1]).div(255); // normalize
-  imagesTensor.dispose();
-  const labels = tf.oneHot(tf.tensor1d(rawDataset.labels.map((v: any) => (typeof v === 'number' ? v : 0)) as any, 'int32'), 10);
+  const imagesReshaped = tf.tensor4d(flattened, [numSamples, 28, 28, 1]);
+  const labels = tf.oneHot(tf.tensor1d(labelsArr, 'int32'), 10);
   dataset = { images: imagesReshaped, labels };
 }
 
@@ -103,38 +127,85 @@ async function trainStep(batchSize: number) {
 
   const { images, labels } = dataset;
   const numSamples = images.shape[0];
-  const indices = tf.util.createShuffledIndices(numSamples);
+  const indicesArray = tf.util.createShuffledIndices(numSamples);
+  const indices = tf.tensor1d(Array.from(indicesArray), 'int32');
   const shuffledImages = tf.gather(images, indices);
   const shuffledLabels = tf.gather(labels, indices);
+  indices.dispose();
 
   for (let i = 0; i < numSamples; i += batchSize) {
-    if (!isTraining) break; // allow pausing
-    const batchImages = shuffledImages.slice(i, batchSize);
-    const batchLabels = shuffledLabels.slice(i, batchSize);
+    if (!isTraining) break; 
+    const actualBatchSize = Math.min(batchSize, numSamples - i);
+    const batchImages = tf.slice(shuffledImages, [i, 0, 0, 0], [actualBatchSize, 28, 28, 1]);
+    const batchLabels = tf.slice(shuffledLabels, [i, 0], [actualBatchSize, 10]);
 
-    const history = await model.fit(batchImages, batchLabels, { epochs: 1, verbose: 0 });
-    const loss = history.history.loss[0] as number;
-    const accuracy = history.history.acc[0] as number;
+    const historyResponse = await trainModel.fit(batchImages, batchLabels, { epochs: 1, verbose: 0 });
+    
+    // Explicitly sync weights from trainModel to visualization model
+    model.setWeights(trainModel.getWeights());
+    
+    const loss = historyResponse.history.loss[0] as number;
+    const accuracy = (historyResponse.history.acc ? historyResponse.history.acc[0] : (historyResponse.history.accuracy ? historyResponse.history.accuracy[0] : 0)) as number;
+    
     trainingHistory.push({ step: trainingHistory.length + 1, loss, accuracy });
 
-    // Send update to main thread
-    postMessage({ type: 'trainingUpdate', history: trainingHistory.slice(-1) });
+    // --- Visualization during training ---
+    // Take the first image of this batch to show it in the 3D Scene
+    const singleImage = tf.slice(batchImages, [0, 0, 0, 0], [1, 28, 28, 1]);
+    const [conv1, pool1, fc, output] = model!.predict(singleImage) as any[];
+    
+    const convData = conv1.dataSync() as Float32Array;
+    const poolData = pool1.dataSync() as Float32Array;
+    const fcData = fc.dataSync() as Float32Array;
+    const outputProbs = output.dataSync() as Float32Array;
+    const currentInputImage = singleImage.dataSync() as Float32Array;
 
-    tf.dispose([batchImages, batchLabels]);
+    // Send update to main thread
+    postMessage({ 
+      type: 'trainingUpdate', 
+      history: trainingHistory.slice(-1),
+      epoch: Math.floor(i / numSamples) + 1,
+      // Visualization data for this specific step
+      visualization: {
+        convData,
+        convShape: conv1.shape as [number, number, number, number],
+        poolData,
+        poolShape: pool1.shape as [number, number, number, number],
+        fcData: Array.from(fcData),
+        outputProbs: Array.from(outputProbs),
+        inputData: Array.from(currentInputImage)
+      }
+    });
+
+    tf.dispose([batchImages, batchLabels, singleImage, conv1, pool1, fc, output]);
   }
 
   tf.dispose([shuffledImages, shuffledLabels]);
 }
 
-async function imageToTensor(img: HTMLImageElement | ImageBitmap) {
-  // TensorFlow already imported
+async function imageToTensor(img: ImageBitmap) {
   const off = new OffscreenCanvas(28, 28);
-  const ctx = off.getContext('2d')!;
-  // both HTMLImageElement and ImageBitmap are drawable
-  ctx.drawImage(img as any, 0, 0, 28, 28);
+  const ctx = off.getContext('2d', { willReadFrequently: true })!;
+  
+  // Fill black background just in case of transparency
+  ctx.fillStyle = 'black';
+  ctx.fillRect(0, 0, 28, 28);
+  ctx.drawImage(img, 0, 0, 28, 28);
+  
   const imageData = ctx.getImageData(0, 0, 28, 28);
-  let tensor = tf.browser.fromPixels(imageData, 1).toFloat().div(255).expandDims(0);
-  return tensor;
+  const data = new Float32Array(28 * 28);
+  
+  for (let i = 0; i < 28 * 28; i++) {
+    const r = imageData.data[i * 4];
+    const g = imageData.data[i * 4 + 1];
+    const b = imageData.data[i * 4 + 2];
+    // Grayscale + Contrast Boost
+    let v = (r * 0.299 + g * 0.587 + b * 0.114) / 255;
+    // Push values towards 0 or 1 to help the model with font-based input
+    data[i] = v > 0.1 ? Math.min(1.0, v * 1.5) : 0;
+  }
+  
+  return tf.tensor4d(data, [1, 28, 28, 1]);
 }
 
 async function handleMessage(e: MessageEvent<WorkerMessage>) {
@@ -150,27 +221,30 @@ async function handleMessage(e: MessageEvent<WorkerMessage>) {
     const blob = await resp.blob();
     const bitmap = await createImageBitmap(blob);
     const inputTensor = await imageToTensor(bitmap);
-    const [conv1, pool1, output] = model!.predict(inputTensor) as any[];
+    const [conv1, pool1, fc, output] = model!.predict(inputTensor) as any[];
 
     const convData = conv1.dataSync() as Float32Array;
     const poolData = pool1.dataSync() as Float32Array;
+    const fcData = fc.dataSync() as Float32Array;
     const outputProbs = output.dataSync() as Float32Array;
 
     const result: WorkerResult = {
       type: 'inference',
       convData,
-      convShape: conv1.shape as [number, number, number, number],
+      convShape: Array.from(conv1.shape) as [number, number, number, number],
       poolData,
-      poolShape: pool1.shape as [number, number, number, number],
+      poolShape: Array.from(pool1.shape) as [number, number, number, number],
+      fcData: Array.from(fcData),
       outputProbs,
     };
 
     (postMessage as any)(result, [convData.buffer, poolData.buffer, outputProbs.buffer]);
-    tf.dispose([inputTensor, conv1, pool1, output]);
+    tf.dispose([inputTensor, conv1, pool1, fc, output]);
 
   } else if (type === 'startTraining') {
     const { dataset: rawDataset, epochs = 10, batchSize = 32 } = e.data;
-    if (!model) await createModel();
+    // Always recreate model on start to reset weights/biases
+    await createModel();
     await prepareDataset(rawDataset!);
     isTraining = true;
     trainingHistory = [];

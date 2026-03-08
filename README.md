@@ -5,6 +5,8 @@
 # Run and deploy your AI Studio app
 
 This contains everything you need to run your app locally.
+Checkout the app on:
+https://blagojevicboban.github.io/cnn-arvr/
 
 View your app in AI Studio: https://ai.studio/apps/3e02985d-3179-4aa2-ac17-a85437ace644
 

@@ -8,9 +8,6 @@ export default defineConfig(({mode}) => {
   return {
     base: './', // Use relative paths for GitHub Pages to avoid repo name mismatch
     plugins: [react(), tailwindcss()],
-    define: {
-      'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY),
-    },
     resolve: {
       alias: {
         '@': path.resolve(__dirname, '.'),

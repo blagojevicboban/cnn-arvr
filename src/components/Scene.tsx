@@ -1,26 +1,26 @@
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Stars, Environment } from '@react-three/drei';
-import { XR, createXRStore } from '@react-three/xr';
 import { Layer } from './Layer';
 import { Connection } from './Connection';
 import { DenseConnections } from './DenseConnections';
 import { useState, useEffect, useRef } from 'react';
-import { Play, Pause, SkipForward, SkipBack, Upload, Settings, X, Activity, ChevronDown, ChevronUp } from 'lucide-react';
+import { Play, Pause, SkipForward, SkipBack, Upload, Settings, X, Activity, ChevronDown, ChevronUp, Eye, EyeOff, Grid3x3, Link, LayoutDashboard, HelpCircle, Info } from 'lucide-react';
 import * as THREE from 'three';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { processImage, startTraining, pauseTraining, resumeTraining, saveCheckpoint, loadCheckpoint, exportTrainingHistory } from '../utils/imageProcessor';
+import { processImage, startTraining, pauseTraining, resumeTraining, saveCheckpoint, loadCheckpoint, exportTrainingHistory, getWorker, tensorDataToMaps } from '../utils/imageProcessor';
 import { trainingDataset } from '../utils/trainingDataset';
-
-const store = createXRStore();
-
 // Sample images (using placeholder services for demo)
 const SAMPLE_IMAGES = [
-  { id: '0', url: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/25.png', label: 'Pikachu', type: 'Sprite' },
-  { id: '1', url: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/1.png', label: 'Bulbasaur', type: 'Sprite' },
-  { id: '2', url: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/4.png', label: 'Charmander', type: 'Sprite' },
-  { id: '3', url: 'https://placehold.co/28x28/000000/FFFFFF/png?text=7', label: 'MNIST Digit', type: 'Grayscale' },
-  { id: '4', url: 'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=200', label: 'Cat', type: 'Photo' },
-  { id: '5', url: 'https://images.unsplash.com/photo-1523875194681-bedd468c58bf?w=200', label: 'Dice', type: 'Object' },
+  { id: '0', url: 'https://placehold.co/28x28/000000/FFFFFF/png?text=0', label: '0', type: 'MNIST' },
+  { id: '1', url: 'https://placehold.co/28x28/000000/FFFFFF/png?text=1', label: '1', type: 'MNIST' },
+  { id: '2', url: 'https://placehold.co/28x28/000000/FFFFFF/png?text=2', label: '2', type: 'MNIST' },
+  { id: '3', url: 'https://placehold.co/28x28/000000/FFFFFF/png?text=3', label: '3', type: 'MNIST' },
+  { id: '4', url: 'https://placehold.co/28x28/000000/FFFFFF/png?text=4', label: '4', type: 'MNIST' },
+  { id: '5', url: 'https://placehold.co/28x28/000000/FFFFFF/png?text=5', label: '5', type: 'MNIST' },
+  { id: '6', url: 'https://placehold.co/28x28/000000/FFFFFF/png?text=6', label: '6', type: 'MNIST' },
+  { id: '7', url: 'https://placehold.co/28x28/000000/FFFFFF/png?text=7', label: '7', type: 'MNIST' },
+  { id: '8', url: 'https://placehold.co/28x28/000000/FFFFFF/png?text=8', label: '8', type: 'MNIST' },
+  { id: '9', url: 'https://placehold.co/28x28/000000/FFFFFF/png?text=9', label: '9', type: 'MNIST' },
 ];
 
 interface LayerConfig {
@@ -45,7 +45,7 @@ export function Scene() {
     { id: 0, type: 'input', pos: [-6, 0, 0], size: [28, 28], depth: 1, label: "Input (28x28)" },
     { id: 1, type: 'conv', pos: [-3, 0, 0], size: [24, 24], depth: 6, label: "Conv1 (6x24x24)", kernelSize: 5, stride: 1, filters: 6 },
     { id: 2, type: 'pool', pos: [0, 0, 0], size: [12, 12], depth: 6, label: "Pool1 (6x12x12)", kernelSize: 2, stride: 2 },
-    { id: 3, type: 'fc', pos: [3, 0, 0], size: [10, 1], depth: 1, label: "FC (120)" },
+    { id: 3, type: 'fc', pos: [3, 0, 0], size: [80, 1], depth: 1, label: "FC (80)" },
     { id: 4, type: 'output', pos: [6, 0, 0], size: [10, 1], depth: 1, label: "Output (10)" },
   ]);
 
@@ -55,15 +55,22 @@ export function Scene() {
   const [processedData, setProcessedData] = useState<{
     convMaps: string[];
     poolMaps: string[];
+    fcActivations: number[];
     outputProbs: number[];
   } | null>(null);
 
   // UI State
-  const [isInputPanelOpen, setIsInputPanelOpen] = useState(true);
-  const [isTrainingPanelOpen, setIsTrainingPanelOpen] = useState(true);
+  const [showInputPanel, setShowInputPanel] = useState(false);
+  const [showTrainingPanel, setShowTrainingPanel] = useState(false);
+  const [showDataPanel, setShowDataPanel] = useState(false);
+  const [showHelp, setShowHelp] = useState(true);
+  const [lang, setLang] = useState<'sr' | 'en'>('sr');
+  const [showStars, setShowStars] = useState(false);
+  const [showGrid, setShowGrid] = useState(false);
+  const [showConnections, setShowConnections] = useState(true);
 
   // Training Data Collection
-  const [collectedData, setCollectedData] = useState<{ images: number[][][]; labels: number[] }>({ images: [], labels: [] });
+  const [collectedData, setCollectedData] = useState<{ images: number[][][]; labels: number[] }>(trainingDataset);
   const [isDataCollectionMode, setIsDataCollectionMode] = useState(false);
   const [currentLabel, setCurrentLabel] = useState(0);
 
@@ -74,15 +81,44 @@ export function Scene() {
   const [epoch, setEpoch] = useState(0);
 
   useEffect(() => {
-    const worker = new Worker(new URL('../workers/inferenceWorker.ts', import.meta.url), { type: 'module' });
-    const handleTrainingUpdate = (e: MessageEvent<any>) => {
+    const worker = getWorker();
+    const handleMessage = (e: MessageEvent<any>) => {
       if (e.data.type === 'trainingUpdate') {
-        setTrainingHistory(prev => [...prev, ...e.data.history]);
-        setTrainingStep(prev => prev + 1);
+        const { history, epoch: currentEpoch, visualization } = e.data;
+        if (history && history.length > 0) {
+          setTrainingHistory(prev => [...prev, ...history]);
+          setTrainingStep(prev => prev + history.length);
+          if (currentEpoch !== undefined) setEpoch(currentEpoch);
+
+          // Handle real-time visualization update
+          if (visualization) {
+            const { convData, convShape, poolData, poolShape, fcData, outputProbs, inputData } = visualization;
+            
+            // Fast convert back to maps
+            const convMaps = tensorDataToMaps(new Float32Array(convData), convShape);
+            const poolMaps = tensorDataToMaps(new Float32Array(poolData), poolShape);
+            const inputMaps = tensorDataToMaps(new Float32Array(inputData), [1, 28, 28, 1]);
+
+            setProcessedData({
+              convMaps,
+              poolMaps,
+              fcActivations: fcData,
+              outputProbs: Array.from(outputProbs)
+            });
+            
+            if (inputMaps.length > 0) {
+              setSelectedImage(inputMaps[0]);
+            }
+          }
+        }
+      } else if (e.data.type === 'error') {
+        console.error('Worker Error:', e.data.message);
+        alert('Training Error: ' + e.data.message);
+        setIsTraining(false);
       }
     };
-    worker.addEventListener('message', handleTrainingUpdate);
-    return () => worker.removeEventListener('message', handleTrainingUpdate);
+    worker.addEventListener('message', handleMessage);
+    return () => worker.removeEventListener('message', handleMessage);
   }, []);
 
   const [isProcessing, setIsProcessing] = useState(false);
@@ -113,7 +149,7 @@ export function Scene() {
   useEffect(() => {
     if (isTraining) {
       if (collectedData.images.length > 0) {
-        startTraining(collectedData, 10, 32);
+        startTraining(collectedData, 100, 32);
       } else {
         alert('Please collect some training data first!');
         setIsTraining(false);
@@ -214,44 +250,126 @@ export function Scene() {
 
   const handleNext = () => setActiveLayer((prev) => (prev + 1) % layers.length);
   const handlePrev = () => setActiveLayer((prev) => (prev - 1 + layers.length) % layers.length);
+  
+  const updateLayerConfig = (id: number, key: keyof LayerConfig, value: number) => {
+    setLayers(prev => prev.map(l => l.id === id ? { ...l, [key]: value } : l));
+  };
 
   const selectedLayerConfig = layers.find(l => l.id === selectedLayerId);
 
   return (
     <>
-      <div className="absolute top-4 left-4 z-10 flex gap-2">
-        <button 
-          onClick={() => store.enterAR()}
-          className="bg-white/10 backdrop-blur-md border border-white/20 text-white px-4 py-2 rounded-lg hover:bg-white/20 transition-colors"
-        >
-          Enter AR
-        </button>
-        <button 
-          onClick={() => store.enterVR()}
-          className="bg-white/10 backdrop-blur-md border border-white/20 text-white px-4 py-2 rounded-lg hover:bg-white/20 transition-colors"
-        >
-          Enter VR
-        </button>
-      </div>
-
       {isProcessing && (
         <div className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none">
           <div className="bg-black/60 text-white px-4 py-2 rounded-lg">
-            Processing image...
+            Processing MNIST digit...
+          </div>
+        </div>
+      )}
+
+      {/* Help Modal */}
+      {showHelp && (
+        <div className="absolute inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 text-left">
+          <div className="bg-black/80 border border-white/20 p-8 rounded-3xl max-w-2xl shadow-2xl animate-in zoom-in-95 duration-300">
+            <div className="flex justify-between items-start mb-6">
+              <div className="flex items-center gap-3">
+                <div className="bg-blue-500/20 p-2 rounded-xl">
+                  <HelpCircle size={28} className="text-blue-400" />
+                </div>
+                <div className="text-left">
+                  <h2 className="text-2xl font-bold text-white tracking-tight">{lang === 'sr' ? 'MNIST CNN Vodič' : 'MNIST CNN Guide'}</h2>
+                  <p className="text-gray-400 text-sm">{lang === 'sr' ? 'Kako koristiti 3D simulaciju neuronske mreže' : 'How to use the 3D Neural Network simulation'}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="flex bg-white/5 p-1 rounded-lg border border-white/10">
+                  <button 
+                    onClick={() => setLang('sr')}
+                    className={`px-2 py-1 text-[10px] rounded-md transition-all ${lang === 'sr' ? 'bg-blue-500 text-white' : 'text-gray-400 hover:text-white'}`}
+                  >SR</button>
+                  <button 
+                    onClick={() => setLang('en')}
+                    className={`px-2 py-1 text-[10px] rounded-md transition-all ${lang === 'en' ? 'bg-blue-500 text-white' : 'text-gray-400 hover:text-white'}`}
+                  >EN</button>
+                </div>
+                <button 
+                  onClick={() => setShowHelp(false)}
+                  className="bg-white/5 hover:bg-white/10 p-2 rounded-full transition-colors"
+                >
+                  <X size={20} className="text-gray-400" />
+                </button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8 text-gray-300 text-sm leading-relaxed text-left">
+              <div className="space-y-4">
+                <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
+                  <h4 className="text-white font-semibold mb-2 flex items-center gap-2">
+                    <Activity size={16} className="text-blue-400" />
+                    {lang === 'sr' ? 'Kritičan korak: TRENIRANJE' : 'Critical Step: TRAINING'}
+                  </h4>
+                  <p>{lang === 'sr' ? 
+                    'Mreža na početku ima nasumično znanje. Da bi prepoznala cifre, morate otvoriti Training Monitor i kliknuti na Start. Sačekajte da preciznost (Acc) dostigne bar 80%.' : 
+                    'The network starts with random knowledge. To recognize digits, open Training Monitor and click Start. Wait until accuracy (Acc) reaches at least 80%.'}
+                  </p>
+                </div>
+                <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
+                  <h4 className="text-white font-semibold mb-2 flex items-center gap-2">
+                    <Grid3x3 size={16} className="text-green-400" />
+                    {lang === 'sr' ? 'Odabir ulaza' : 'Input Selection'}
+                  </h4>
+                  <p>{lang === 'sr' ? 
+                    'Koristite MNIST Input panel desno da izaberete primer cifre ili otpremite svoju sliku (28x28 piksela).' : 
+                    'Use the MNIST Input panel on the right to select a digit sample or upload your own image (28x28 pixels).'}
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
+                  <h4 className="text-white font-semibold mb-2 flex items-center gap-2">
+                    <Link size={16} className="text-purple-400" />
+                    {lang === 'sr' ? 'Analiza veza' : 'Connection Analysis'}
+                  </h4>
+                  <p>{lang === 'sr' ? 
+                    'Gledajte kako se veze menjaju tokom učenja. Plave i zelene boje označavaju jače aktivacije. Labele na izlazu (desno) pokazuju sigurnost mreže.' : 
+                    'Watch how connections change during learning. Blue and green colors indicate stronger activations. Output labels (right) show the network certainty.'}
+                  </p>
+                </div>
+                <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
+                  <h4 className="text-white font-semibold mb-2 flex items-center gap-2">
+                    <Info size={16} className="text-orange-400" />
+                    {lang === 'sr' ? 'Interakcija' : 'Interaction'}
+                  </h4>
+                  <p>{lang === 'sr' ? 
+                    'Kliknite na bilo koji sloj u 3D sceni da vidite njegove parametre. Koristite donji panel za brzo prebacivanje prozora.' : 
+                    'Click on any layer in the 3D scene to see its parameters. Use the bottom panel to quickly toggle windows.'}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <button 
+              onClick={() => setShowHelp(false)}
+              className="w-full bg-blue-600 hover:bg-blue-500 text-white py-3 rounded-2xl font-bold transition-all shadow-lg shadow-blue-600/20 active:scale-95"
+            >
+              {lang === 'sr' ? 'Razumem, pokreni simulaciju!' : 'Got it, start simulation!'}
+            </button>
           </div>
         </div>
       )}
 
       {/* Dataset Selection Panel */}
-      <div className={`absolute top-4 right-4 z-10 flex flex-col gap-2 bg-black/50 backdrop-blur-md p-4 rounded-xl border border-white/10 w-64 transition-all duration-300 ${isInputPanelOpen ? 'max-h-[80vh]' : 'max-h-[60px] overflow-hidden'}`}>
-        <div className="flex justify-between items-center mb-2">
-            <h3 className="text-white font-semibold text-sm">Input Data</h3>
-            <button onClick={() => setIsInputPanelOpen(!isInputPanelOpen)} className="text-gray-400 hover:text-white">
-                {isInputPanelOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-            </button>
-        </div>
-        
-        <div className={`transition-opacity duration-300 ${isInputPanelOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+      {showInputPanel && (
+        <div className="absolute top-4 right-4 z-10 flex flex-col gap-2 bg-black/60 backdrop-blur-xl p-4 rounded-xl border border-white/20 w-64 shadow-2xl max-h-[80vh] overflow-y-auto pointer-events-auto animate-in fade-in slide-in-from-right-4 duration-300">
+          <div className="flex justify-between items-center mb-2 border-b border-white/10 pb-2">
+              <h3 className="text-white font-bold text-sm tracking-wide flex items-center gap-2">
+                <Settings size={16} className="text-blue-400" />
+                {lang === 'sr' ? 'MNIST ULAZ' : 'MNIST INPUT'}
+              </h3>
+          </div>
+          
+          <div className="opacity-100">
             <div className="grid grid-cols-3 gap-2 mb-4">
             {SAMPLE_IMAGES.map((img) => (
                 <button
@@ -280,14 +398,15 @@ export function Scene() {
             />
             <button
                 onClick={() => fileInputRef.current?.click()}
-                className="flex items-center justify-center gap-2 bg-white/10 hover:bg-white/20 text-white py-2 rounded-lg text-sm transition-colors border border-white/10"
+                className="flex items-center justify-center gap-2 bg-blue-500/20 hover:bg-blue-500/40 text-blue-100 py-2 rounded-lg text-sm transition-colors border border-blue-500/30"
             >
                 <Upload size={16} />
                 Upload Image
             </button>
             </div>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Layer Configuration Panel */}
       {selectedLayerConfig && (selectedLayerConfig.type === 'conv' || selectedLayerConfig.type === 'pool') && (
@@ -356,34 +475,32 @@ export function Scene() {
       )}
 
       {/* Training Panel */}
-      <div className={`absolute top-4 left-48 z-10 flex flex-col gap-2 bg-black/50 backdrop-blur-md p-4 rounded-xl border border-white/10 w-80 transition-all duration-300 ${isTrainingPanelOpen ? 'max-h-[400px]' : 'max-h-[60px] overflow-hidden'}`}>
-        <div className="flex justify-between items-center mb-2">
-            <h3 className="text-white font-semibold text-sm flex items-center gap-2">
-                <Activity size={16} className="text-blue-400" />
-                Training Monitor
-            </h3>
-            <div className="flex gap-2">
-                <button 
-                    onClick={toggleTraining}
-                    className={`px-3 py-1 rounded-md text-xs font-bold transition-colors ${
-                        isTraining ? 'bg-red-500 hover:bg-red-600 text-white' : 'bg-green-500 hover:bg-green-600 text-white'
-                    }`}
-                >
-                    {isTraining ? 'Stop' : 'Start'}
-                </button>
-                <button 
-                    onClick={handlePauseResume}
-                    className="px-3 py-1 rounded-md text-xs font-bold bg-yellow-500 hover:bg-yellow-600 text-white"
-                >
-                    {isTraining ? 'Pause' : 'Resume'}
-                </button>
-                <button onClick={() => setIsTrainingPanelOpen(!isTrainingPanelOpen)} className="text-gray-400 hover:text-white">
-                    {isTrainingPanelOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-                </button>
-            </div>
-        </div>
+      {showTrainingPanel && (
+        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10 flex flex-col gap-2 bg-black/60 backdrop-blur-xl p-4 rounded-xl border border-white/20 w-80 shadow-2xl pointer-events-auto animate-in fade-in slide-in-from-top-4 duration-300">
+          <div className="flex justify-between items-center mb-2 border-b border-white/10 pb-2">
+              <h3 className="text-white font-bold text-sm flex items-center gap-2 tracking-wide">
+                  <Activity size={16} className="text-blue-400" />
+                  {lang === 'sr' ? 'TRENING MONITOR' : 'TRAINING MONITOR'}
+              </h3>
+              <div className="flex gap-2">
+                  <button 
+                      onClick={toggleTraining}
+                      className={`px-3 py-1 rounded-md text-xs font-bold transition-all shadow-lg ${
+                          isTraining ? 'bg-red-500 hover:bg-red-600 shadow-red-500/20 text-white' : 'bg-green-500 hover:bg-green-600 shadow-green-500/20 text-white'
+                      }`}
+                  >
+                      {isTraining ? 'Stop' : 'Start'}
+                  </button>
+                  <button 
+                      onClick={handlePauseResume}
+                      className="px-3 py-1 rounded-md text-xs font-bold bg-yellow-500 hover:bg-yellow-600 shadow-yellow-500/20 text-white transition-all"
+                  >
+                      {isTraining ? 'Pause' : 'Resume'}
+                  </button>
+              </div>
+          </div>
 
-        <div className={`transition-opacity duration-300 ${isTrainingPanelOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+          <div className="opacity-100">
             <div className="grid grid-cols-2 gap-2 mb-2">
                 <div className="bg-white/5 p-2 rounded-lg">
                     <div className="text-xs text-gray-400">Epoch</div>
@@ -414,27 +531,26 @@ export function Scene() {
                 <span className="text-red-400">Loss: {trainingHistory[trainingHistory.length - 1]?.loss.toFixed(3) || '0.000'}</span>
                 <span className="text-green-400">Acc: {(trainingHistory[trainingHistory.length - 1]?.accuracy * 100).toFixed(1) || '0.0'}%</span>
             </div>
-            <div className="flex gap-2 mt-2">
-                <button onClick={handleSaveCheckpoint} className="px-2 py-1 rounded text-xs bg-blue-500 hover:bg-blue-600 text-white">Save Checkpoint</button>
-                <button onClick={handleLoadCheckpoint} className="px-2 py-1 rounded text-xs bg-purple-500 hover:bg-purple-600 text-white">Load Checkpoint</button>
-                <button onClick={handleExportHistory} className="px-2 py-1 rounded text-xs bg-gray-500 hover:bg-gray-600 text-white">Export History</button>
+            <div className="flex gap-1.5 mt-2">
+                <button onClick={handleSaveCheckpoint} className="flex-1 px-2 py-1.5 rounded text-[10px] bg-blue-600/30 hover:bg-blue-600/50 text-blue-100 border border-blue-500/30 transition-colors">Save</button>
+                <button onClick={handleLoadCheckpoint} className="flex-1 px-2 py-1.5 rounded text-[10px] bg-purple-600/30 hover:bg-purple-600/50 text-purple-100 border border-purple-500/30 transition-colors">Load</button>
+                <button onClick={handleExportHistory} className="flex-1 px-2 py-1.5 rounded text-[10px] bg-gray-600/30 hover:bg-gray-600/50 text-gray-100 border border-gray-500/30 transition-colors">Export</button>
             </div>
         </div>
       </div>
+      )}
 
       {/* Data Collection Panel */}
-      <div className={`absolute top-4 left-4 z-10 flex flex-col gap-2 bg-black/50 backdrop-blur-md p-4 rounded-xl border border-white/10 w-80 transition-all duration-300 ${isDataCollectionMode ? 'max-h-[400px]' : 'max-h-[60px] overflow-hidden'}`}>
-        <div className="flex justify-between items-center mb-2">
-          <h3 className="text-white font-semibold text-sm flex items-center gap-2">
-            <Upload size={16} className="text-green-400" />
-            Data Collection
-          </h3>
-          <button onClick={() => setIsDataCollectionMode(!isDataCollectionMode)} className="text-gray-400 hover:text-white">
-            {isDataCollectionMode ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-          </button>
-        </div>
+      {showDataPanel && (
+        <div className="absolute top-4 left-4 z-10 flex flex-col gap-2 bg-black/60 backdrop-blur-xl p-4 rounded-xl border border-white/20 w-80 shadow-2xl pointer-events-auto animate-in fade-in slide-in-from-left-4 duration-300">
+          <div className="flex justify-between items-center mb-2 border-b border-white/10 pb-2">
+            <h3 className="text-white font-bold text-sm flex items-center gap-2 tracking-wide">
+              <Upload size={16} className="text-green-400" />
+              {lang === 'sr' ? 'KOLEKCIJA PODATAKA' : 'DATA COLLECTION'}
+            </h3>
+          </div>
 
-        <div className={`transition-opacity duration-300 ${isDataCollectionMode ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+          <div className="opacity-100">
           <div className="mb-4">
             <label className="text-xs text-gray-400 block mb-2">Select Label (0-9)</label>
             <div className="grid grid-cols-5 gap-1">
@@ -474,23 +590,25 @@ export function Scene() {
             </div>
           </div>
 
-          <div className="text-xs text-gray-400">
-            <p>Upload images or use sample images above. Each image will be converted to 28x28 grayscale and labeled with the selected digit.</p>
+          <div className="text-xs text-gray-500 italic mt-auto">
+            <p>Upload images to label and add to training set. Images are auto-resized to 28x28.</p>
           </div>
         </div>
       </div>
+      )}
 
       <Canvas camera={{ position: [0, 5, 12], fov: 50 }}>
-        <XR store={store}>
-          <color attach="background" args={['#050505']} />
+        <color attach="background" args={['#050505']} />
           <fog attach="fog" args={['#050505', 10, 30]} />
           
           <ambientLight intensity={0.5} />
           <pointLight position={[10, 10, 10]} intensity={1} />
           <spotLight position={[-10, 10, -10]} angle={0.3} penumbra={1} intensity={1} castShadow />
           
-          <Stars radius={100} depth={50} count={5000} factor={4} saturation={0} fade speed={1} />
+          {showStars && <Stars radius={100} depth={50} count={5000} factor={4} saturation={0} fade speed={1} />}
           <Environment preset="city" />
+
+          {showGrid && <gridHelper args={[30, 30, 0x444444, 0x222222]} position={[0, -3, 0]} />}
 
           <group position={[0, 0, 0]}>
             {layers.map((layer, index) => (
@@ -508,24 +626,35 @@ export function Scene() {
                     layer.type === 'pool' ? processedData?.poolMaps : undefined
                   }
                   activations={
-                    layer.type === 'output' ? processedData?.outputProbs : undefined
+                    layer.type === 'output' ? processedData?.outputProbs : 
+                    layer.type === 'fc' ? processedData?.fcActivations : undefined
                   }
                   outputLabels={
                     layer.type === 'output' ? ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'] : undefined
                   }
                   onClick={() => setSelectedLayerId(layer.id)}
                 />
-                {index < layers.length - 1 && (
+                {showConnections && index < layers.length - 1 && (
                   <>
-                    {/* Use DenseConnections for Pool->FC and FC->Output for detailed visualization */}
+                    {/* Use DenseConnections for all detailed layer connections */}
                     {(layer.type === 'pool' && layers[index + 1].type === 'fc') || 
-                     (layer.type === 'fc' && layers[index + 1].type === 'output') ? (
+                     (layer.type === 'fc' && layers[index + 1].type === 'output') ||
+                     (layer.type === 'input' && layers[index + 1].type === 'conv') ||
+                     (layer.type === 'conv' && layers[index + 1].type === 'pool') ||
+                     (layer.type === 'input' && layers[index + 1].type === 'pool') ? (
                       <DenseConnections
                         layer1={layer}
                         layer2={layers[index + 1]}
                         active={activeLayer === index || isTraining}
                         trainingStep={trainingStep}
                         weight={0.8}
+                        activations1={
+                          layer.type === 'fc' ? processedData?.fcActivations : undefined
+                        }
+                        activations2={
+                          layers[index + 1].type === 'fc' ? processedData?.fcActivations :
+                          layers[index + 1].type === 'output' ? processedData?.outputProbs : undefined
+                        }
                       />
                     ) : (
                       <Connection 
@@ -542,36 +671,85 @@ export function Scene() {
           </group>
 
           <OrbitControls makeDefault />
-          <gridHelper args={[30, 30, 0x444444, 0x222222]} position={[0, -3, 0]} />
-        </XR>
       </Canvas>
       
-      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-4 w-full max-w-2xl px-4 pointer-events-none">
-        <div className="bg-black/50 backdrop-blur-md p-4 rounded-xl border border-white/10 text-center w-full pointer-events-auto">
-          <h1 className="text-xl font-bold mb-4">CNN Architecture Visualization</h1>
+      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex flex-col items-center gap-3 w-full max-w-lg px-4 pointer-events-none">
+        <div className="bg-black/60 backdrop-blur-lg p-3 rounded-xl border border-white/10 text-center w-full pointer-events-auto shadow-2xl">
+          <h1 className="text-lg font-bold mb-2">MNIST CNN Simulation</h1>
           
-          <div className="flex justify-center items-center gap-4 mb-4">
+          <div className="flex justify-center items-center gap-3 mb-3">
             <button 
               onClick={handlePrev}
-              className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
+              className="p-1.5 rounded-full bg-white/5 hover:bg-white/20 transition-colors"
             >
-              <SkipBack size={20} />
+              <SkipBack size={18} />
             </button>
             <button 
               onClick={() => setIsPlaying(!isPlaying)}
-              className="p-3 rounded-full bg-blue-500 hover:bg-blue-600 transition-colors"
+              className="p-2.5 rounded-full bg-blue-500 hover:bg-blue-600 transition-colors shadow-lg shadow-blue-500/20"
             >
-              {isPlaying ? <Pause size={24} /> : <Play size={24} />}
+              {isPlaying ? <Pause size={20} /> : <Play size={20} />}
             </button>
             <button 
               onClick={handleNext}
-              className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
+              className="p-1.5 rounded-full bg-white/5 hover:bg-white/20 transition-colors"
             >
-              <SkipForward size={20} />
+              <SkipForward size={18} />
+            </button>
+            <div className="w-px h-5 bg-white/10"></div>
+            <button 
+              onClick={() => setShowStars(!showStars)}
+              className="p-1.5 rounded-full bg-white/5 hover:bg-white/20 transition-colors"
+              title={showStars ? "Hide stars" : "Show stars"}
+            >
+              {showStars ? <Eye size={18} /> : <EyeOff size={18} />}
+            </button>
+            <button 
+              onClick={() => setShowGrid(!showGrid)}
+              className="p-1.5 rounded-full bg-white/5 hover:bg-white/20 transition-colors"
+              title={showGrid ? "Hide grid" : "Show grid"}
+            >
+              <Grid3x3 size={18} />
+            </button>
+            <button 
+              onClick={() => setShowConnections(!showConnections)}
+              className="p-1.5 rounded-full bg-white/5 hover:bg-white/20 transition-colors"
+              title={showConnections ? "Hide connections" : "Show connections"}
+            >
+              <Link size={18} className={showConnections ? "text-blue-400" : "text-gray-400"} />
+            </button>
+            <button 
+              onClick={() => setShowDataPanel(!showDataPanel)}
+              className="p-1.5 rounded-full bg-white/5 hover:bg-white/20 transition-colors"
+              title={showDataPanel ? "Hide Data Collection" : "Show Data Collection"}
+            >
+              <Upload size={18} className={showDataPanel ? "text-green-400" : "text-gray-400"} />
+            </button>
+            <button 
+              onClick={() => setShowTrainingPanel(!showTrainingPanel)}
+              className="p-1.5 rounded-full bg-white/5 hover:bg-white/20 transition-colors"
+              title={showTrainingPanel ? "Hide Training Monitor" : "Show Training Monitor"}
+            >
+              <Activity size={18} className={showTrainingPanel ? "text-blue-400" : "text-gray-400"} />
+            </button>
+            <button 
+              onClick={() => setShowInputPanel(!showInputPanel)}
+              className="p-1.5 rounded-full bg-white/5 hover:bg-white/20 transition-colors"
+              title={showInputPanel ? "Hide Input Panel" : "Show Input Panel"}
+            >
+              <Settings size={18} className={showInputPanel ? "text-blue-400" : "text-gray-400"} />
+            </button>
+            <div className="w-[1px] h-4 bg-white/10 mx-1" />
+            <button 
+              onClick={() => setShowHelp(!showHelp)}
+              className="p-1.5 rounded-full bg-blue-500/20 hover:bg-blue-500/40 transition-colors"
+              title="Help & Guide"
+            >
+              <HelpCircle size={18} className="text-blue-400" />
             </button>
           </div>
 
-          <div className="flex justify-between gap-2 text-xs sm:text-sm overflow-x-auto pb-2 w-full">
+          <div className="flex justify-center gap-2 text-[10px] sm:text-xs overflow-x-auto pb-1 w-full">
             {layers.map((layer, index) => (
               <div 
                 key={layer.id}
@@ -579,10 +757,10 @@ export function Scene() {
                   setActiveLayer(index);
                   setIsPlaying(false);
                 }}
-                className={`cursor-pointer px-3 py-2 rounded transition-all whitespace-nowrap ${
+                className={`cursor-pointer px-2.5 py-1.5 rounded transition-all whitespace-nowrap border ${
                   activeLayer === index 
-                    ? 'bg-blue-500 text-white scale-105 shadow-lg shadow-blue-500/20' 
-                    : 'bg-white/5 hover:bg-white/10 text-gray-400'
+                    ? 'bg-blue-500 border-blue-400 text-white scale-105 shadow-md shadow-blue-500/20' 
+                    : 'bg-white/5 border-transparent hover:bg-white/10 text-gray-400'
                 }`}
               >
                 {layer.label.split(' ')[0]}

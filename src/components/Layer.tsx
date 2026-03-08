@@ -63,7 +63,7 @@ export function Layer({ position, type, size, depth, label, active, textureUrl, 
     const mapSize = 0.8;
     const gap = 0.1;
     
-    // Calculate grid layout for depth (feature maps)
+    // Calculate grid layout for depth (feature maps) - YZ plane parallel to X axis
     const cols = Math.ceil(Math.sqrt(depth));
     const rows = Math.ceil(depth / cols);
     
@@ -71,15 +71,15 @@ export function Layer({ position, type, size, depth, label, active, textureUrl, 
       const row = Math.floor(i / cols);
       const col = i % cols;
       
-      const x = (col - (cols - 1) / 2) * (mapSize + gap);
-      const y = -(row - (rows - 1) / 2) * (mapSize + gap);
+      const y = (col - (cols - 1) / 2) * (mapSize + gap);
+      const z = -(row - (rows - 1) / 2) * (mapSize + gap);
       
       // Use specific feature map texture if available, otherwise fallback to main texture or color
       const mapTex = mapTextures[i] || (i === 0 ? texture : null);
 
       maps.push(
-        <group key={i} position={[x, y, 0]}>
-          <Box args={[mapSize, mapSize, 0.05]}>
+        <group key={i} position={[-0.8, y, z]}>
+          <Box args={[0.05, mapSize, mapSize]}>
             <meshStandardMaterial 
               color={mapTex ? "white" : (active ? "#4ade80" : "#60a5fa")} 
               transparent 
@@ -97,13 +97,13 @@ export function Layer({ position, type, size, depth, label, active, textureUrl, 
             const step = mapSize / segments;
             const halfSize = mapSize / 2;
             
-            // Vertical lines
+            // Vertical lines (along Y axis)
             for (let i = 0; i <= segments; i++) {
-              const x = -halfSize + i * step;
+              const y = -halfSize + i * step;
               lines.push(
                 <Line
                   key={`v${i}`}
-                  points={[[x, -halfSize, 0.02], [x, halfSize, 0.02]]}
+                  points={[[0.02, y, -halfSize], [0.02, y, halfSize]]}
                   color={0xFFFFFF}
                   lineWidth={1.5}
                   opacity={0.8}
@@ -111,13 +111,13 @@ export function Layer({ position, type, size, depth, label, active, textureUrl, 
               );
             }
             
-            // Horizontal lines
+            // Horizontal lines (along Z axis)
             for (let i = 0; i <= segments; i++) {
-              const y = -halfSize + i * step;
+              const z = -halfSize + i * step;
               lines.push(
                 <Line
                   key={`h${i}`}
-                  points={[[-halfSize, y, 0.02], [halfSize, y, 0.02]]}
+                  points={[[0.02, -halfSize, z], [0.02, halfSize, z]]}  
                   color={0xFFFFFF}
                   lineWidth={1.5}
                   opacity={0.8}
@@ -133,80 +133,202 @@ export function Layer({ position, type, size, depth, label, active, textureUrl, 
     return maps;
   };
 
+  const renderInputDisplay = () => {
+    // Display main input image/grid (separate from neurons) - YZ plane like feature maps
+    const mapSize = 2;
+    
+    return (
+      <group key="input-display" position={[-0.8, 0, 0]}>
+        <Box args={[0.05, mapSize, mapSize]}>
+          <meshStandardMaterial 
+            color={texture ? "white" : (active ? "#fbbf24" : "#6b7280")} 
+            transparent 
+            opacity={0.9} 
+            emissive={active ? "#fbbf24" : "#000"}
+            emissiveIntensity={active ? 0.3 : 0}
+            map={texture}
+            side={THREE.DoubleSide}
+          />
+        </Box>
+        
+        {/* Grid lines to show 28x28 pixel structure - in YZ plane like neurons */}
+        {(() => {
+          const lines = [];
+          const segments = 28;
+          const step = mapSize / segments;
+          const halfSize = mapSize / 2;
+          
+          // Vertical lines (along Y axis)
+          for (let i = 0; i <= segments; i += 4) {
+            const y = -halfSize + i * step;
+            lines.push(
+              <Line
+                key={`v${i}`}
+                points={[[0.02, y, -halfSize], [0.02, y, halfSize]]}
+                color={0xFFFFFF}
+                lineWidth={1.2}
+                opacity={0.6}
+              />
+            );
+          }
+          
+          // Horizontal lines (along Z axis)
+          for (let i = 0; i <= segments; i += 4) {
+            const z = -halfSize + i * step;
+            lines.push(
+              <Line
+                key={`h${i}`}
+                points={[[0.02, -halfSize, z], [0.02, halfSize, z]]}
+                color={0xFFFFFF}
+                lineWidth={1.2}
+                opacity={0.6}
+              />
+            );
+          }
+          
+          return lines;
+        })()}
+      </group>
+    );
+  };
+
+  const renderFeatureMapsInput = () => {
+    // For input layer visual representation as matrix
+    return renderInputDisplay();
+  };
+
   const renderNeurons = () => {
     const neurons = [];
     
     if (type === 'input') {
-      // For input layer, show 28x28 grid of neurons representing pixels
-      const gridSize = 28;
-      const spacing = 0.05; // Small spacing between neurons
-      const totalWidth = (gridSize - 1) * spacing;
-      const startX = -totalWidth / 2;
-      const startY = -totalWidth / 2;
+      // Input layer: 28x28 neurons (downsampled to 14x14 for performance)
+      const gridSide = 14;
+      const spacing = 0.15;
+      const radius = 0.05;
+      const start = -(gridSide - 1) * spacing / 2;
       
-      for (let row = 0; row < gridSize; row++) {
-        for (let col = 0; col < gridSize; col++) {
-          const x = startX + col * spacing;
-          const y = startY + row * spacing;
-          
+      for (let r = 0; r < gridSide; r++) {
+        for (let c = 0; c < gridSide; c++) {
           neurons.push(
-            <mesh key={`${row}-${col}`} position={[x, y, 0]}>
-              <sphereGeometry args={[0.01, 8, 8]} />
-              <meshStandardMaterial 
-                color={active ? "#fbbf24" : "#6b7280"} 
-                emissive={active ? "#fbbf24" : "#000"}
-                emissiveIntensity={active ? 0.3 : 0}
-                side={THREE.DoubleSide}
-              />
+            <mesh key={`in-${r}-${c}`} position={[0, start + c * spacing, start + r * spacing]}>
+              <sphereGeometry args={[radius, 8, 8]} />
+              <meshStandardMaterial color={active ? "#fbbf24" : "#444"} />
             </mesh>
           );
         }
       }
-    } else {
-      // For other layers, show vertical line of neurons
-      const height = (size[0] - 1) * 0.5;
+    } else if (type === 'conv' || type === 'pool') {
+      // Conv/Pool layers: Render neurons as grids behind each feature map
+      const mapCols = Math.ceil(Math.sqrt(depth));
+      const mapRows = Math.ceil(depth / mapCols);
+      const mapSize = 0.8;
+      const gap = 0.1;
       
-      for (let i = 0; i < size[0]; i++) {
-        const y = (i - (size[0] - 1) / 2) * 0.5;
+      // Downsample neurons for performance (e.g., 6x6 for Conv, 4x4 for Pool)
+      const neuronGridSize = type === 'conv' ? 6 : 4;
+      const neuronSpacing = mapSize / (neuronGridSize + 1);
+      const radius = type === 'conv' ? 0.04 : 0.06;
+
+      for (let i = 0; i < depth; i++) {
+        const mRow = Math.floor(i / mapCols);
+        const mCol = i % mapCols;
+        const mY = (mCol - (mapCols - 1) / 2) * (mapSize + gap);
+        const mZ = -(mRow - (mapRows - 1) / 2) * (mapSize + gap);
+
+        for (let r = 0; r < neuronGridSize; r++) {
+          for (let c = 0; c < neuronGridSize; c++) {
+            const y = mY - mapSize/2 + (c + 1) * neuronSpacing;
+            const z = mZ - mapSize/2 + (r + 1) * neuronSpacing;
+            neurons.push(
+              <mesh key={`map-${i}-n-${r}-${c}`} position={[0.1, y, z]}>
+                <sphereGeometry args={[radius, 8, 8]} />
+                <meshStandardMaterial color={active ? "#4ade80" : "#444"} />
+              </mesh>
+            );
+          }
+        }
+      }
+    } else if (type === 'fc' || type === 'output') {
+      // FC: 10x12 vertical-first grid, Output: 1x10 vertical stack
+      const totalNeurons = size[0];
+      const gridWidth = type === 'fc' ? 10 : 1; // Width along Z
+      const gridHeight = Math.ceil(totalNeurons / gridWidth); // Height along Y
+      
+      const spacing = type === 'output' ? 0.6 : 0.35;
+      const radius = type === 'output' ? 0.22 : 0.15;
+      const startZ = -(gridWidth - 1) * spacing / 2;
+      const startY = (gridHeight - 1) * spacing / 2;
+      
+      for (let i = 0; i < totalNeurons; i++) {
+        const row = Math.floor(i / gridWidth); // Vertical level (0 is top)
+        const col = i % gridWidth;             // Horizontal position in row
+        const y = startY - row * spacing;
+        const z = startZ + col * spacing;
         
         // Visualize activation intensity if available
         const activation = activations ? activations[i] : 0;
-        const intensity = activations ? activation : (active ? 0.8 : 0);
+        const baseIntensity = active ? 0.2 : 0;
+        const intensity = activations ? Math.min(1.2, baseIntensity + activation * 0.8) : (active ? 0.6 : 0);
         
         // For Output layer, show probability bars
         const isOutput = type === 'output';
+        const isFC = type === 'fc';
+        const color = isOutput ? (activation > 0.5 ? "#22c55e" : "#facc15") : (isFC ? "#fbbf24" : "#f87171");
         const outputLabel = outputLabels ? outputLabels[i] : `${i}`;
         
         neurons.push(
-          <group key={i} position={[0, y, 0]}>
-              <mesh>
-              <sphereGeometry args={[0.15, 16, 16]} />
+          <group key={i} position={[0, y, z]}>
+            <mesh>
+              <sphereGeometry args={[radius, 16, 16]} />
               <meshStandardMaterial 
-                  color={active ? "#facc15" : "#f87171"} 
-                  emissive={active ? "#facc15" : "#000"}
-                  emissiveIntensity={intensity}
-                  side={THREE.DoubleSide}
+                color={active ? color : "#444"} 
+                emissive={active ? color : "#000"}
+                emissiveIntensity={intensity}
+                side={THREE.DoubleSide}
               />
-              </mesh>
-              {isOutput && activations ? (
-                  <group position={[0.3, 0, 0]}>
-                      <Box args={[activation * 2, 0.1, 0.1]} position={[activation, 0, 0]}>
-                          <meshStandardMaterial color="#22c55e" side={THREE.DoubleSide} />
-                      </Box>
-                      <Text position={[activation * 2 + 0.2, 0, 0]} fontSize={0.15} color="white" anchorX="left">
-                          {(activation * 100).toFixed(0)}%
-                      </Text>
-                      <Text position={[activation * 2 + 0.8, 0, 0]} fontSize={0.15} color="white" anchorX="left">
-                          {outputLabel}
-                      </Text>
-                  </group>
-              ) : (
-                  isOutput && (
-                      <Text position={[0.4, 0, 0]} fontSize={0.15} color="white" anchorX="left" anchorY="middle">
-                          {outputLabel}
-                      </Text>
-                  )
-              )}
+            </mesh>
+            {isOutput && (
+              <group position={[0.4, 0, 0]}>
+                {/* Background Scale Bar (Horizontal along X) */}
+                <Box args={[1.5, 0.08, 0.02]} position={[0.75, 0, 0]}>
+                   <meshStandardMaterial color="#222" transparent opacity={0.5} />
+                </Box>
+
+                {/* Active Scale Bar */}
+                {activation > 0.01 && (
+                  <Box args={[1.5 * activation, 0.1, 0.03]} position={[(1.5 * activation) / 2, 0, 0.01]}>
+                    <meshStandardMaterial 
+                      color={activation > 0.5 ? "#22c55e" : (active ? "#facc15" : "#6b7280")} 
+                      emissive={activation > 0.5 ? "#22c55e" : "#000"}
+                      emissiveIntensity={0.5}
+                    />
+                  </Box>
+                )}
+
+                {/* Percentage Text */}
+                <Text 
+                  position={[1.6, 0, 0]} 
+                  fontSize={0.12} 
+                  color={activation > 0.1 ? "#22c55e" : "#666"} 
+                  anchorX="left" 
+                  anchorY="middle"
+                >
+                  {(activation * 100).toFixed(0)}%
+                </Text>
+
+                {/* Large Label (Digit) - Moved to the right of % */}
+                <Text 
+                  position={[2.0, 0, 0]} 
+                  fontSize={0.45} 
+                  fontWeight="bold"
+                  color={activation > 0.5 ? "#22c55e" : "white"} 
+                  anchorX="left" 
+                  anchorY="middle"
+                >
+                  {outputLabel}
+                </Text>
+              </group>
+            )}
           </group>
         );
       }
@@ -220,7 +342,17 @@ export function Layer({ position, type, size, depth, label, active, textureUrl, 
       onClick?.();
     }}>
       <Text
-        position={[0, type === 'fc' || type === 'output' ? size[0] * 0.25 + 1 : 2.5, 0]}
+        position={[0.5, (() => {
+          if (type === 'fc' || type === 'output') {
+            const gridWidth = type === 'fc' ? 10 : 1;
+            const gridHeight = Math.ceil(size[0] / gridWidth);
+            const spacing = type === 'output' ? 0.6 : 0.35;
+            const totalHeight = (gridHeight - 1) * spacing;
+            return totalHeight / 2 + 1.2;
+          } else {
+            return 2.5;
+          }
+        })(), 0]}
         fontSize={0.3}
         color="white"
         anchorX="center"
@@ -229,13 +361,13 @@ export function Layer({ position, type, size, depth, label, active, textureUrl, 
         {label}
       </Text>
       
-      {type === 'fc' || type === 'output' || type === 'input' ? 
+      {type === 'fc' || type === 'output' ? 
         renderNeurons() : 
-        (type === 'conv' || type === 'pool') ? 
+        (type === 'conv' || type === 'pool' || type === 'input') ? 
           <>
-            {/* Feature maps in front */}
+            {/* Feature maps/Grid in front */}
             <group position={[0, 0, 0.5]}>
-              {renderFeatureMaps()}
+              {type === 'input' ? renderFeatureMapsInput() : renderFeatureMaps()}
             </group>
             {/* Neurons behind */}
             <group position={[0, 0, -0.5]}>
