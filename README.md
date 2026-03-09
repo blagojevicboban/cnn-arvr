@@ -3,7 +3,7 @@
 </div>
 
 # CNN Interactive 3D Visualization and LIVE Training
-
+## MNIST Convolutional Neural Network
 Everything you need to run the application locally.
 Check the application at:
 https://blagojevicboban.github.io/cnn-arvr/
