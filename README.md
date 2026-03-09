@@ -13,44 +13,13 @@
   [View Live Demo](https://blagojevicboban.github.io/cnn-arvr/) 🚀
 </div>
 
----
+# CNN Interactive 3D Visualization and LIVE Training
+## MNIST Convolutional Neural Network
+Everything you need to run the application locally.
+Check the application at:
+https://blagojevicboban.github.io/cnn-arvr/
 
-## 📖 About Project
-
-This project is an advanced educational tool designed to provide a visual understanding of what happens "under the hood" of a modern Convolutional Neural Network (CNN). Focused on **MNIST** digit classification, users can trace the flow of information from the raw image to the network's final decision.
-
-The primary goal is to demystify neural networks by showing how features are extracted through convolutions and pooling layers, and how the final dense layers converge towards a classification.
-
----
-
-## ✨ Key Features
-
-- **🌐 Live 3D Architecture**: Full 3D representation of layers (Input, Conv, Pool, FC, Output) updating in real-time.
-- **⚡ Real-time Training**: True in-browser training using **Web Workers**, ensuring a fluid 60 FPS experience.
-- **🧬 Dynamic Neurons & Connections**: Neurons and connections change glow intensity and thickness based on live weights and activations.
-- **📊 Training Monitor**: Track **Loss** (Categorical Crossentropy) and **Accuracy** curves on interactive charts.
-- **🛠️ Interactive HUD**: Adjust connection thickness, toggle activation maps, switch to AR/VR mode, and control camera rotation.
-- **📸 Custom Data Collection**: Ability to upload your own images and assign labels for personalized training.
-
----
-
-## 🛠️ Tech Stack
-
-### Frontend & Rendering
-- **React**: State management and UI componentization.
-- **Three.js** (@react-three/fiber): Core 3D engine.
-- **Drei**: Essential 3D helpers (Text, Line, OrbitControls).
-- **Tailwind CSS**: Modern glassmorphism interface design.
-- **Lucide React**: Premium icon set.
-
-### Machine Learning & Processing
-- **TensorFlow.js**: Training and inference engine.
-- **Web Workers API**: Parallel processing of ML models off the main thread.
-- **OffscreenCanvas**: Generating high-quality synthetic training samples.
-
----
-
-## 🚀 Installation & Run Locally
+## Run Locally
 
 **Prerequisites:** Node.js (v16+)
 
