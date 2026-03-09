@@ -1,53 +1,94 @@
 <div align="center">
-<img width="1200" alt="CNN 3D Vizuelizacija Hero" src="public/cnn-arvr.gif" />
+  <img width="1200" alt="CNN 3D Visualization Hero" src="public/cnn-arvr.gif" />
+  
+  # 🧠 CNN 3D Visualization & Live Training
+  
+  [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+  [![React](https://img.shields.io/badge/React-20232A?style=flat&logo=react&logoColor=61DAFB)](https://reactjs.org/)
+  [![Three.js](https://img.shields.io/badge/Three.js-000000?style=flat&logo=three.js&logoColor=white)](https://threejs.org/)
+  [![TensorFlow.js](https://img.shields.io/badge/TensorFlow.js-FF6F00?style=flat&logo=tensorflow&logoColor=white)](https://www.tensorflow.org/js)
+  
+  **Interactive 3D neural network visualization with real-time in-browser training.**
+
+  [View Live Demo](https://blagojevicboban.github.io/cnn-arvr/) 🚀
 </div>
 
-# CNN 3D Vizuelizacija
+---
 
-Everything you need to run the application locally.
-Check the application at:
-https://blagojevicboban.github.io/cnn-arvr/
+## 📖 About Project
 
-View your app in AI Studio: https://ai.studio/apps/3e02985d-3179-4aa2-ac17-a85437ace644
+This project is an advanced educational tool designed to provide a visual understanding of what happens "under the hood" of a modern Convolutional Neural Network (CNN). Focused on **MNIST** digit classification, users can trace the flow of information from the raw image to the network's final decision.
 
-## Run Locally
+The primary goal is to demystify neural networks by showing how features are extracted through convolutions and pooling layers, and how the final dense layers converge towards a classification.
 
-**Prerequisites:**  Node.js
+---
 
-1. Install dependencies (this will also pull in TensorFlow.js used by the on‑worker model):
+## ✨ Key Features
+
+- **🌐 Live 3D Architecture**: Full 3D representation of layers (Input, Conv, Pool, FC, Output) updating in real-time.
+- **⚡ Real-time Training**: True in-browser training using **Web Workers**, ensuring a fluid 60 FPS experience.
+- **🧬 Dynamic Neurons & Connections**: Neurons and connections change glow intensity and thickness based on live weights and activations.
+- **📊 Training Monitor**: Track **Loss** (Categorical Crossentropy) and **Accuracy** curves on interactive charts.
+- **🛠️ Interactive HUD**: Adjust connection thickness, toggle activation maps, switch to AR/VR mode, and control camera rotation.
+- **📸 Custom Data Collection**: Ability to upload your own images and assign labels for personalized training.
+
+---
+
+## 🛠️ Tech Stack
+
+### Frontend & Rendering
+- **React**: State management and UI componentization.
+- **Three.js** (@react-three/fiber): Core 3D engine.
+- **Drei**: Essential 3D helpers (Text, Line, OrbitControls).
+- **Tailwind CSS**: Modern glassmorphism interface design.
+- **Lucide React**: Premium icon set.
+
+### Machine Learning & Processing
+- **TensorFlow.js**: Training and inference engine.
+- **Web Workers API**: Parallel processing of ML models off the main thread.
+- **OffscreenCanvas**: Generating high-quality synthetic training samples.
+
+---
+
+## 🚀 Installation & Run Locally
+
+**Prerequisites:** Node.js (v16+)
+
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/blagojevicboban/cnn-arvr.git
+   cd cnn-arvr
+   ```
+
+2. **Install dependencies:**
    ```bash
    npm install
    ```
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key if you plan to use the Google GenAI portion.
-3. Start the development server:
+
+3. **Start the development server:**
    ```bash
    npm run dev
    ```
 
 ---
 
-### Notes on the CNN Demo
+## 🎮 How to Use
 
-The project now uses a **TensorFlow.js** convolutional model running inside a Web Worker for both inference and training.
+### 1. Training
+Open the **Training Monitor** (Activity icon) and click **Start**. Watch the Loss drop (ideally below 0.1). Wait for at least 10-20 epochs for optimal results.
 
-- **Inference**: Worker performs convolutions and pooling off the main thread, returning feature maps and probabilities.
-- **Training**: Real in-browser training on user-collected datasets. Supports pause/resume, checkpoints (saved to localStorage), and history export.
-- **Data Collection**: Interactive dataset building - upload images, assign labels (0-9), and train on your own data instead of synthetic patterns.
-- Model architecture mirrors the 5-layer network shown in the 3-D scene.
-- Can be extended with real datasets or swapped for ONNX/TFLite models.
+### 2. Testing
+In the **MNIST Input** panel, select one of the provided digits or upload your own image. Observe how the network "recognizes" the digit and which parts of the network activate.
 
-This setup demonstrates true ML integration: collect your own training data, train the model live, and see real convergence!
+### 3. Customization
+Use the bottom panel to control visual elements:
+- **Network**: Toggle connection lines and adjust their thickness with the slider.
+- **Grid (Matrices)**: Show or hide internal activation maps.
+- **AR/VR**: Switch to Augmented/Virtual Reality mode for a more immersive experience.
 
-#### How to Use Data Collection
+---
 
-1. **Open Data Collection Panel**: Click the green "Data Collection" panel on the left side of the screen.
-2. **Select Label**: Choose a digit (0-9) that represents what you want to train the model to recognize.
-3. **Add Images**: 
-   - Use sample images from the "Input Data" panel, or
-   - Upload your own images using the "Upload Image" button
-4. **Add to Training Data**: Click "Add Current Image" to convert the selected image to 28x28 grayscale and add it to your training dataset.
-5. **Train**: Once you have collected some data, click "Start" in the Training Monitor panel to begin training on your custom dataset.
-6. **Monitor Progress**: Watch the loss and accuracy curves update in real-time as the model learns from your data.
-
-The model will learn to recognize the patterns in your collected images and classify new images accordingly!
+<div align="center">
+  <p>Created as part of the <b>Advanced Agentic Coding</b> project.</p>
+</div>
 
