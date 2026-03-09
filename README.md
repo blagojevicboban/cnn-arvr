@@ -2,7 +2,7 @@
 <img width="1200" alt="CNN 3D Vizuelizacija Hero" src="public/cnn-arvr.gif" />
 </div>
 
-# CNN 3D Vizuelizacija
+# CNN Interactive 3D Visualization and LIVE Training
 
 Everything you need to run the application locally.
 Check the application at:
