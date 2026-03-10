@@ -1,5 +1,5 @@
 # CNN 3D Vizuelizacija - Tehnička Dokumentacija
-**Verzija: v1.0.0**
+**Verzija: v1.1.0**
 
 ## Pregled
 Ovaj projekat predstavlja interaktivnu 3D vizuelizaciju konvolucione neuronske mreže (CNN) dizajnirane za prepoznavanje rukom pisanih cifara (MNIST stil). Omogućava korisnicima da prate proces treninga u realnom vremenu, ispituju aktivacije unutrašnjih slojeva i razumeju kako informacije protiču kroz mrežu.
@@ -25,14 +25,14 @@ Model je sekvencijalni CNN sa sledećim slojevima:
 1.  **Input Layer (Ulaz)**: 28x28 grayscale slika.
 2.  **Conv2D Layer**: 8 filtera (3x3 kernel), ReLU aktivacija i Batch Normalizacija.
 3.  **MaxPooling2D Layer**: 2x2 pooling, smanjuje prostorne dimenzije.
-4.  **Fully Connected (FC) Layer**: 80 neurona sa ReLU aktivacijom, Batch Normalizacijom i Dropout-om (25%).
+4.  **Fully Connected (FC) Layer**: 64 neurona sa ReLU aktivacijom, Batch Normalizacijom i Dropout-om (25%).
 5.  **Output Layer (Izlaz)**: 10 neurona sa Softmax aktivacijom (predstavljaju cifre 0-9).
 
 ## Ključne Funkcionalnosti
 
 ### Vizuelizacija Treninga u Realnom Vremenu
 - **Mape Aktivacija**: Izlazi konvolucionih i pooling slojeva se pretvaraju u teksture u realnom vremenu tokom treninga.
-- **Svetlucanje Neurona (Glow)**: Neuroni FC i Output slojeva menjaju intenzitet sjaja na osnovu njihovih stvarnih vrednosti aktivacije ($0.0$ do $1.0$).
+- **Svetlucanje Neurona (Glow)**: Neuroni FC i Output slojeva menjaju intenzitet sjaja na osnovu njihovih stvarnih vrednosti aktivacije ($0.0$ do $1.0$). FC sloj je vizuelizovan kao 8x8 matrica radi preglednosti.
 - **Dinamičke Veze**: Debljina i boja linija veza između slojeva odražavaju snagu protoka informacija.
 
 ### Monitor Treninga (Training Monitor)

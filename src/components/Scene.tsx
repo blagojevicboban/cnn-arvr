@@ -899,7 +899,7 @@ export function Scene() {
           </div>
           
           <div className="absolute bottom-2 right-4 text-[10px] text-gray-600 pointer-events-none opacity-50">
-            v1.0.0
+            v1.1.0
           </div>
         </div>
       </div>

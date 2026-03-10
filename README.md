@@ -1,7 +1,7 @@
 <div align="center">
 <img width="1200" alt="CNN 3D Visualization Hero" src="public/cnn-arvr.gif" />
 
-# CNN 3D Visualization & LIVE Training (v1.0.0)
+# CNN 3D Visualization & LIVE Training (v1.1.0)
 **CNN 3D Visualization** is an open-source interactive platform designed for education and research of convolutional neural networks. It allows users to monitor model training in real-time directly in the browser, visualize the flow of information through a 5-layer architecture, and experiment with their own datasets.
 
 [![CNN Live Demo](https://img.shields.io/badge/Live-Demo-brightgreen?style=for-the-badge&logo=vercel)](https://blagojevicboban.github.io/cnn-arvr/)
@@ -18,24 +18,32 @@ This platform implements the key pillars of modern ML visualization:
 - **Layer-by-Layer Inspection**: Each layer (Input, Conv, Pool, FC, Output) is displayed as a physical entity in 3D space.
 - **Activation Maps**: Outputs of convolutional filters are rendered as dynamic textures that update in real-time during inference and training.
 - **Neural Glow**: The light intensity of neurons in FC layers directly reflects their activation value ($0.0$ to $1.0$).
-- **Dynamic Connections**: The thickness and color of lines between layers visualize the strength and direction of information flow (Backpropagation).
+- **Dynamic Connections**: The thickness and color of lines between layers visualize the strength and direction of information flow.
 
 ### ✅ Result 2: In-Browser Training (TF.js)
 - **Client-Side Computing**: Complete training and inference are executed within the user's browser using TensorFlow.js.
 - **Web Worker Parallelization**: All heavy ML computations are offloaded to a separate worker thread, allowing for a fluid 60 FPS for 3D visualization even during intensive training.
 - **Dual-Model Synchronization**: The system uses two models - one optimized for training speed and another for extracting internal activations for visualization.
 
-### ✅ Result 3: Dynamic Data Collection
+### ✅ Result 3: 8x8 FC Matrix Representation
+- **Structural Alignment**: The Fully Connected (FC) layer is represented as a structured 8x8 matrix (64 neurons) for better spatial organization.
+- **Full Connectivity Visualization**: Optimized sampling algorithms ensure that every single neuron in the 8x8 matrix shows visual data flow from the pooling layer, eliminating "dead zones".
+
+### ✅ Result 4: Multilingual & Visual Contrast
+- **EN/RS Toggle**: Instant switching between English (default) and Serbian languages for all UI elements and the AI Mentor.
+- **Visual Contrast Mode**: High-contrast toggle to enhance the visibility of active neurons and connections, making the learning process more apparent.
+
+### ✅ Result 5: Dynamic Data Collection
 - **Dataset Builder**: Users can create their own training sets by uploading images or using built-in MNIST samples.
 - **Interactive Labeling**: A simple interface for assigning labels (0-9) and instant conversion to tensor formats.
 - **Real-Time Augmentation**: The system automatically performs grayscale conversion, resizing (28x28), and contrast enhancement for optimal results.
 
-### ✅ Result 4: Visual Performance Monitor
+### ✅ Result 6: Visual Performance Monitor
 - **Real-time Recharts**: Integrated charts track Loss and Accuracy through epochs.
 - **Checkpoints**: Automatic saving of best models to the browser's `localStorage`, allowing training to resume after a page refresh.
 - **Status Console**: Detailed insight into Web Worker state and training progress.
 
-### ✅ Result 5: Gemini AI Mentor
+### ✅ Result 7: Gemini AI Mentor
 - **Context-Aware Assistance**: Chat with an AI that knows your current training metrics and active layer.
 - **Interactive Explanations**: Ask technical questions like "What does a convolution layer do?" and get instant expert answers.
 - **Optimization Tips**: Get real-time advice on how to improve your model's accuracy and reduce loss.

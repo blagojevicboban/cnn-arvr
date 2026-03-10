@@ -1,7 +1,7 @@
 <div align="center">
 <img width="1200" alt="CNN 3D Vizuelizacija Hero" src="public/cnn-arvr.gif" />
 
-# CNN 3D Visualization & LIVE Training (v1.0.0)
+# CNN 3D Visualization & LIVE Training (v1.1.0)
 **CNN 3D Visualization** je interaktivna platforma otvorenog koda namenjena edukaciji i istraživanju konvolucionih neuronskih mreža. Omogućava korisnicima da u realnom vremenu prate trening modela direktno u brauzeru, vizuelizuju protok informacija kroz 5-slojnu arhitekturu i eksperimentišu sa sopstvenim setovima podataka.
 
 [![CNN Live Demo](https://img.shields.io/badge/Live-Demo-brightgreen?style=for-the-badge&logo=vercel)](https://blagojevicboban.github.io/cnn-arvr/)
@@ -25,17 +25,25 @@ Ova platforma implementira ključne stubove moderne ML vizuelizacije:
 - **Web Worker Paralelizacija**: Sva teška ML računanja su izbačena u poseban worker thread, omogućavajući fluidnih 60 FPS za 3D vizuelizaciju čak i tokom intenzivnog treninga.
 - **Dual-Model Sinhronizacija**: Sistem koristi dva modela - jedan optimizovan za brzinu treninga i drugi za ekstrakciju unutrašnjih aktivacija za vizuelizaciju.
 
-### ✅ Result 3: Dinamičko Prikupljanje Podataka
+### ✅ Result 3: 8x8 FC Prikaz Matrice
+- **Strukturno Poravnanje**: Fully Connected (FC) sloj je predstavljen kao 8x8 matrica (64 neurona) za bolju prostornu organizaciju.
+- **Vizuelizacija Potpune Povezanosti**: Optimizovani algoritmi uzorkovanja osiguravaju da svaki neuron u 8x8 matrici prikazuje vizuelni protok podataka, eliminišući "mrtve zone".
+
+### ✅ Result 4: Multijezičnost i Vizuelni Kontrast
+- **EN/RS Prebacivač**: Trenutna promena između engleskog (podrazumevani) i srpskog jezika za sve UI elemente i AI Mentora.
+- **Visual Contrast Mod**: Toggle za visok kontrast koji pojačava vidljivost aktivnih neurona i veza.
+
+### ✅ Result 5: Dinamičko Prikupljanje Podataka
 - **Dataset Builder**: Korisnici mogu kreirati sopstvene trening setove otpremanjem slika ili korišćenjem ugrađenih MNIST primera.
 - **Interaktivno Labeliranje**: Jednostavan interfejs za dodeljivanje labela (0-9) i trenutnu konverziju u tenzorske formate.
 - **Augmentacija u Realnom Vremenu**: Sistem automatski vrši grayscale konverziju, promenu veličine (28x28) i pojačavanje kontrasta za optimalne rezultate.
 
-### ✅ Result 4: Vizuelni Monitor Performansi
+### ✅ Result 6: Vizuelni Monitor Performansi
 - **Real-time Recharts**: Integrisani grafikoni prate Gubitak (Loss) i Preciznost (Accuracy) kroz epohe.
 - **Checkpoints**: Automatsko čuvanje najboljih modela u `localStorage` pretraživača, omogućavajući nastavak treninga nakon osvežavanja stranice.
 - **Statusna Konzola**: Detaljan uvid u stanje Web Workera i progres treninga.
 
-### ✅ Result 5: Gemini AI Mentor
+### ✅ Result 7: Gemini AI Mentor
 - **Kontekstualna Pomoć**: Chat sa vestačkom inteligencijom koja poznaje vaše trenutne metrike i aktivni sloj.
 - **Interaktivna Objašnjenja**: Postavljajte tehnička pitanja poput "Šta radi konvolucioni sloj?" i dobijte trenutne stručne odgovore.
 - **Saveti za Optimizaciju**: Dobijte savete u realnom vremenu o tome kako da poboljšate preciznost modela i smanjite gubitak.

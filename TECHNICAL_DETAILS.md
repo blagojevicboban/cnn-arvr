@@ -1,5 +1,5 @@
 # CNN 3D Visualization - Technical Documentation
-**Version: v1.0.0**
+**Version: v1.1.0**
 
 ## Overview
 This project features an interactive 3D visualization of a Convolutional Neural Network (CNN) designed for handwritten digit recognition (MNIST style). It allows users to monitor the training process in real-time, inspect internal layer activations, and understand how information flows through the network.
@@ -25,14 +25,14 @@ The model is a sequential CNN with the following layers:
 1.  **Input Layer**: 28x28 grayscale image.
 2.  **Conv2D Layer**: 8 filters (3x3 kernel), ReLU activation, and Batch Normalization.
 3.  **MaxPooling2D Layer**: 2x2 pooling, reduces spatial dimensions.
-4.  **Fully Connected (FC) Layer**: 80 neurons with ReLU activation, Batch Normalization, and Dropout (25%).
+4.  **Fully Connected (FC) Layer**: 64 neurons with ReLU activation, Batch Normalization, and Dropout (25%).
 5.  **Output Layer**: 10 neurons with Softmax activation (representing digits 0-9).
 
 ## Key Functionalities
 
 ### Real-Time Training Visualization
 - **Activation Maps**: Convolutional and pooling layer outputs are converted to textures in real-time during training.
-- **Neuron Glow**: FC and Output layer neurons change glow intensity based on their actual activation values ($0.0$ to $1.0$).
+- **Neuron Glow**: FC and Output layer neurons change glow intensity based on their actual activation values ($0.0$ to $1.0$). The FC layer is visualized as an 8x8 matrix for clarity.
 - **Dynamic Connections**: The thickness and color of connection lines between layers reflect the strength of information flow.
 
 ### Training Monitor
