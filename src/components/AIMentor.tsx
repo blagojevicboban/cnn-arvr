@@ -5,6 +5,7 @@ import { askGemini } from '../utils/gemini';
 interface AIMentorProps {
   isOpen: boolean;
   onClose: () => void;
+  lang?: 'en' | 'sr';
   context?: {
     activeLayer?: string;
     trainingHistory?: any[];
@@ -14,7 +15,7 @@ interface AIMentorProps {
   };
 }
 
-export function AIMentor({ isOpen, onClose, context }: AIMentorProps) {
+export function AIMentor({ isOpen, onClose, context, lang = 'en' }: AIMentorProps) {
   const [messages, setMessages] = useState<{ role: 'ai' | 'user'; text: string }[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -25,10 +26,12 @@ export function AIMentor({ isOpen, onClose, context }: AIMentorProps) {
     if (messages.length === 0) {
       setMessages([{
         role: 'ai',
-        text: 'Zdravo! Ja sam tvoj Gemini-powered AI Mentor. Tu sam da ti objasnim kako funkcioniše ova neuronska mreža. Šta te najviše zanima?'
+        text: lang === 'sr' 
+          ? 'Zdravo! Ja sam tvoj Gemini-powered AI Mentor. Tu sam da ti objasnim kako funkcioniše ova neuronska mreža. Šta te najviše zanima?'
+          : 'Hi! I am your Gemini-powered AI Mentor. I am here to help you understand how this neural network works. What are you most interested in?'
       }]);
     }
-  }, []);
+  }, [lang]);
 
   // Scroll to bottom
   useEffect(() => {
@@ -119,7 +122,7 @@ export function AIMentor({ isOpen, onClose, context }: AIMentorProps) {
                 <div className="w-1 h-1 bg-blue-400 rounded-full animate-bounce [animation-delay:-0.15s]" />
                 <div className="w-1 h-1 bg-blue-400 rounded-full animate-bounce" />
               </div>
-              <span className="text-[10px] text-blue-400 font-medium">Gemini razmišlja...</span>
+              <span className="text-[10px] text-blue-400 font-medium">{lang === 'sr' ? 'Gemini razmišlja...' : 'Gemini is thinking...'}</span>
             </div>
           </div>
         )}
@@ -129,25 +132,25 @@ export function AIMentor({ isOpen, onClose, context }: AIMentorProps) {
       {messages.length < 3 && !isLoading && (
         <div className="px-4 pb-2 flex flex-wrap gap-2">
             <button 
-                onClick={() => handleQuickQuestion("Objasni mi konvolucioni sloj.")}
+                onClick={() => handleQuickQuestion(lang === 'sr' ? "Objasni mi konvolucioni sloj." : "Explain the convolutional layer to me.")}
                 className="text-[10px] bg-white/5 hover:bg-white/10 border border-white/10 px-2 py-1.5 rounded-lg text-gray-300 transition-all flex items-center gap-1.5"
             >
                 <BrainCircuit size={12} className="text-blue-400" />
-                Šta je Conv?
+                {lang === 'sr' ? 'Šta je Conv?' : 'What is Conv?'}
             </button>
             <button 
-                onClick={() => handleQuickQuestion("Analiziraj metrike mog treninga.")}
+                onClick={() => handleQuickQuestion(lang === 'sr' ? "Analiziraj metrike mog treninga." : "Analyze my training metrics.")}
                 className="text-[10px] bg-white/5 hover:bg-white/10 border border-white/10 px-2 py-1.5 rounded-lg text-gray-300 transition-all flex items-center gap-1.5"
             >
                 <Activity size={12} className="text-green-400" />
-                Analiziraj trening
+                {lang === 'sr' ? 'Analiziraj trening' : 'Analyze training'}
             </button>
             <button 
-                onClick={() => handleQuickQuestion("Kako da smanjim Loss?")}
+                onClick={() => handleQuickQuestion(lang === 'sr' ? "Kako da smanjim Loss?" : "How do I reduce Loss?")}
                 className="text-[10px] bg-white/5 hover:bg-white/10 border border-white/10 px-2 py-1.5 rounded-lg text-gray-300 transition-all flex items-center gap-1.5"
             >
                 <AlertCircle size={12} className="text-red-400" />
-                Smanji Loss
+                {lang === 'sr' ? 'Smanji Loss' : 'Reduce Loss'}
             </button>
         </div>
       )}
@@ -160,7 +163,7 @@ export function AIMentor({ isOpen, onClose, context }: AIMentorProps) {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-            placeholder="Pitaj mentora..."
+            placeholder={lang === 'sr' ? "Pitaj mentora..." : "Ask mentor..."}
             className="w-full bg-black/40 border border-white/10 rounded-2xl py-3 pl-4 pr-12 text-sm text-white focus:outline-none focus:ring-1 focus:ring-blue-500 transition-all group-hover:border-white/20"
           />
           <button 

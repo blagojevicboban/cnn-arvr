@@ -1,11 +1,14 @@
+/// <reference types="vite/client" />
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const API_KEY = import.meta.env.VITE_GEMINI_API_KEY || "";
 const genAI = new GoogleGenerativeAI(API_KEY);
 
-export async function askGemini(prompt: string, context?: any) {
+export async function askGemini(prompt: string, context?: any, lang: 'sr' | 'en' = 'sr') {
   if (!API_KEY || API_KEY === "MY_GEMINI_API_KEY") {
-    return "Gemini API ključ nije podešen. Molimo podesite VITE_GEMINI_API_KEY u .env fajlu.";
+    return lang === 'sr' 
+      ? "Gemini API ključ nije podešen. Molimo podesite VITE_GEMINI_API_KEY u .env fajlu."
+      : "Gemini API key is not configured. Please set VITE_GEMINI_API_KEY in the .env file.";
   }
 
   const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
@@ -23,7 +26,7 @@ export async function askGemini(prompt: string, context?: any) {
     PITANJE KORISNIKA:
     ${prompt}
     
-    Odgovori na jeziku na kojem je postavljeno pitanje (podrazumevano srpski). Budi kratak, stručan i motivišući.
+    Odgovori na jeziku: ${lang === 'sr' ? 'srpski' : 'engleski'}. Budi kratak, stručan i motivišući.
   `;
 
   try {

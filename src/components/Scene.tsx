@@ -66,7 +66,7 @@ export function Scene() {
   const [showTrainingPanel, setShowTrainingPanel] = useState(false);
   const [showDataPanel, setShowDataPanel] = useState(false);
   const [showHelp, setShowHelp] = useState(true);
-  const [lang, setLang] = useState<'sr' | 'en'>('sr');
+  const [lang, setLang] = useState<'sr' | 'en'>('en');
   const [showStars, setShowStars] = useState(false);
   const [showGrid, setShowGrid] = useState(false);
   const [showConnections, setShowConnections] = useState(true);
@@ -269,6 +269,7 @@ export function Scene() {
       <AIMentor 
         isOpen={showAIMentor} 
         onClose={() => setShowAIMentor(false)} 
+        lang={lang}
         context={{
             activeLayer: layers[activeLayer]?.label,
             trainingHistory: trainingHistory,
