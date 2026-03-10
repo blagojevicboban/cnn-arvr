@@ -32,9 +32,9 @@ export function DenseConnections({ layer1, layer2, active, trainingStep = 0, wei
       const layerPos = new THREE.Vector3(...layer.pos);
       
       if (layer.type === 'fc' || layer.type === 'output') {
-        const gridWidth = layer.type === 'fc' ? 10 : 1;
+        const gridWidth = layer.type === 'fc' ? 8 : 1;
         const gridHeight = Math.ceil(total / gridWidth);
-        const spacing = layer.type === 'output' ? 0.6 : 0.35;
+        const spacing = layer.type === 'output' ? 0.6 : 0.4;
         
         const startZ = -(gridWidth - 1) * spacing / 2;
         const startY = (gridHeight - 1) * spacing / 2;
@@ -136,7 +136,7 @@ export function DenseConnections({ layer1, layer2, active, trainingStep = 0, wei
             const start = getNeuronPos(layer1, i, totalPoolNeurons);
             
             // Targeted connections to ensure full feel
-            for (let j = 0; j < totalFCNeurons; j += 4) { // Connect to every 4th FC neuron
+            for (let j = i % 3; j < totalFCNeurons; j += 3) { // Offset start by i % 3 to cover all FC neurons across the layer
                 const end = getNeuronPos(layer2, j, totalFCNeurons);
                 const act2 = activations2 ? activations2[j] : 0;
                 const strength = active ? (activations2 ? act2 : 0.5) : 0.1;

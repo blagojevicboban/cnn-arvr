@@ -4,7 +4,7 @@ import { Layer } from './Layer';
 import { Connection } from './Connection';
 import { DenseConnections } from './DenseConnections';
 import { useState, useEffect, useRef } from 'react';
-import { Play, Pause, SkipForward, SkipBack, Upload, Settings, X, Activity, ChevronDown, ChevronUp, Eye, EyeOff, Grid3x3, Network, LayoutDashboard, HelpCircle, Info, Box, Zap, Target, Cpu, Layers, Contrast } from 'lucide-react';
+import { Play, Pause, SkipForward, SkipBack, Upload, Settings, X, Activity, ChevronDown, ChevronUp, Eye, EyeOff, Grid3x3, Network, LayoutDashboard, HelpCircle, Info, Box, Zap, Target, Cpu, Layers, Contrast, Languages } from 'lucide-react';
 import * as THREE from 'three';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { processImage, startTraining, pauseTraining, resumeTraining, saveCheckpoint, loadCheckpoint, exportTrainingHistory, getWorker, tensorDataToMaps } from '../utils/imageProcessor';
@@ -47,7 +47,7 @@ export function Scene() {
     { id: 0, type: 'input', pos: [-6, 0, 0], size: [28, 28], depth: 1, label: "Input (28x28)" },
     { id: 1, type: 'conv', pos: [-3, 0, 0], size: [24, 24], depth: 6, label: "Conv1 (6x24x24)", kernelSize: 5, stride: 1, filters: 6 },
     { id: 2, type: 'pool', pos: [0, 0, 0], size: [12, 12], depth: 6, label: "Pool1 (6x12x12)", kernelSize: 2, stride: 2 },
-    { id: 3, type: 'fc', pos: [3, 0, 0], size: [80, 1], depth: 1, label: "FC (80)" },
+    { id: 3, type: 'fc', pos: [3, 0, 0], size: [64, 1], depth: 1, label: "FC (64)" },
     { id: 4, type: 'output', pos: [6, 0, 0], size: [10, 1], depth: 1, label: "Output (10)" },
   ]);
 
@@ -460,7 +460,7 @@ export function Scene() {
                 className="flex items-center justify-center gap-2 bg-blue-500/20 hover:bg-blue-500/40 text-blue-100 py-2 rounded-lg text-sm transition-colors border border-blue-500/30"
             >
                 <Upload size={16} />
-                Upload Image
+                {lang === 'sr' ? 'Otpremi sliku' : 'Upload Image'}
             </button>
             </div>
           </div>
@@ -548,13 +548,13 @@ export function Scene() {
                           isTraining ? 'bg-red-500 hover:bg-red-600 shadow-red-500/20 text-white' : 'bg-green-500 hover:bg-green-600 shadow-green-500/20 text-white'
                       }`}
                   >
-                      {isTraining ? 'Stop' : 'Start'}
+                      {isTraining ? (lang === 'sr' ? 'Stop' : 'Stop') : (lang === 'sr' ? 'Start' : 'Start')}
                   </button>
                   <button 
                       onClick={handlePauseResume}
                       className="px-2.5 py-0.5 rounded-md text-[11px] font-bold bg-yellow-500 hover:bg-yellow-600 shadow-yellow-500/20 text-white transition-all"
                   >
-                      {isTraining ? 'Pause' : 'Resume'}
+                      {isTraining ? (lang === 'sr' ? 'Pauza' : 'Pause') : (lang === 'sr' ? 'Nastavi' : 'Resume')}
                   </button>
               </div>
           </div>
@@ -562,11 +562,11 @@ export function Scene() {
           <div className="opacity-100 flex flex-col gap-1.5">
             <div className="grid grid-cols-2 gap-1.5">
                 <div className="bg-white/5 p-1.5 rounded-lg flex flex-col items-center">
-                    <div className="text-[10px] text-gray-500">Epoch</div>
+                    <div className="text-[10px] text-gray-500">{lang === 'sr' ? 'Epoha' : 'Epoch'}</div>
                     <div className="text-sm font-mono font-bold text-white">{epoch}</div>
                 </div>
                 <div className="bg-white/5 p-1.5 rounded-lg flex flex-col items-center">
-                    <div className="text-[10px] text-gray-500">Step</div>
+                    <div className="text-[10px] text-gray-500">{lang === 'sr' ? 'Korak' : 'Step'}</div>
                     <div className="text-sm font-mono font-bold text-white">{trainingStep}</div>
                 </div>
             </div>
@@ -587,13 +587,13 @@ export function Scene() {
                 </ResponsiveContainer>
             </div>
             <div className="flex justify-between text-[10px] px-1 font-mono">
-                <span className="text-red-400">Loss: {trainingHistory[trainingHistory.length - 1]?.loss.toFixed(3) || '0.000'}</span>
-                <span className="text-green-400">Acc: {(trainingHistory[trainingHistory.length - 1]?.accuracy * 100).toFixed(1) || '0.0'}%</span>
+                <span className="text-red-400">{lang === 'sr' ? 'Gubitak' : 'Loss'}: {trainingHistory[trainingHistory.length - 1]?.loss.toFixed(3) || '0.000'}</span>
+                <span className="text-green-400">{lang === 'sr' ? 'Preciznost' : 'Acc'}: {(trainingHistory[trainingHistory.length - 1]?.accuracy * 100).toFixed(1) || '0.0'}%</span>
             </div>
             <div className="flex gap-1">
-                <button onClick={handleSaveCheckpoint} className="flex-1 px-1 py-1 rounded text-[9px] bg-blue-600/30 hover:bg-blue-600/50 text-blue-100 border border-blue-500/20 transition-colors">Save</button>
-                <button onClick={handleLoadCheckpoint} className="flex-1 px-1 py-1 rounded text-[9px] bg-purple-600/30 hover:bg-purple-600/50 text-purple-100 border border-purple-500/20 transition-colors">Load</button>
-                <button onClick={handleExportHistory} className="flex-1 px-1 py-1 rounded text-[9px] bg-gray-600/30 hover:bg-gray-600/50 text-gray-100 border border-gray-500/20 transition-colors">Export</button>
+                <button onClick={handleSaveCheckpoint} className="flex-1 px-1 py-1 rounded text-[9px] bg-blue-600/30 hover:bg-blue-600/50 text-blue-100 border border-blue-500/20 transition-colors">{lang === 'sr' ? 'Sačuvaj' : 'Save'}</button>
+                <button onClick={handleLoadCheckpoint} className="flex-1 px-1 py-1 rounded text-[9px] bg-purple-600/30 hover:bg-purple-600/50 text-purple-100 border border-purple-500/20 transition-colors">{lang === 'sr' ? 'Učitaj' : 'Load'}</button>
+                <button onClick={handleExportHistory} className="flex-1 px-1 py-1 rounded text-[9px] bg-gray-600/30 hover:bg-gray-600/50 text-gray-100 border border-gray-500/20 transition-colors">{lang === 'sr' ? 'Izvezi' : 'Export'}</button>
             </div>
           </div>
         </div>
@@ -611,7 +611,7 @@ export function Scene() {
 
           <div className="opacity-100">
           <div className="mb-4">
-            <label className="text-xs text-gray-400 block mb-2">Select Label (0-9)</label>
+            <label className="text-xs text-gray-400 block mb-2">{lang === 'sr' ? 'Izaberi labelu (0-9)' : 'Select Label (0-9)'}</label>
             <div className="grid grid-cols-5 gap-1">
               {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((digit) => (
                 <button
@@ -628,7 +628,7 @@ export function Scene() {
           </div>
 
           <div className="mb-4">
-            <div className="text-xs text-gray-400 mb-2">Collected Data: {collectedData.images.length} samples</div>
+            <div className="text-xs text-gray-400 mb-2">{lang === 'sr' ? 'Prikupljeno' : 'Collected Data'}: {collectedData.images.length} {lang === 'sr' ? 'uzoraka' : 'samples'}</div>
             <div className="flex gap-2">
               <button
                 onClick={() => {
@@ -638,19 +638,19 @@ export function Scene() {
                 }}
                 className="flex-1 bg-green-500 hover:bg-green-600 text-white py-2 rounded text-sm transition-colors"
               >
-                Add Current Image
+                {lang === 'sr' ? 'Dodaj sliku' : 'Add Current Image'}
               </button>
               <button
                 onClick={() => setCollectedData({ images: [], labels: [] })}
                 className="bg-red-500 hover:bg-red-600 text-white py-2 px-3 rounded text-sm transition-colors"
               >
-                Clear
+                {lang === 'sr' ? 'Očisti' : 'Clear'}
               </button>
             </div>
           </div>
 
           <div className="text-xs text-gray-500 italic mt-auto">
-            <p>Upload images to label and add to training set. Images are auto-resized to 28x28.</p>
+            <p>{lang === 'sr' ? 'Otpremite slike da biste ih označili i dodali u set za trening. Slike se automatski menjaju na 28x28.' : 'Upload images to label and add to training set. Images are auto-resized to 28x28.'}</p>
           </div>
         </div>
       </div>
@@ -742,7 +742,7 @@ export function Scene() {
             ? 'bg-blue-950/20 backdrop-blur-md border-blue-500/30 shadow-blue-500/10' 
             : 'bg-black/60 backdrop-blur-lg border-white/10'
         }`}>
-          <h1 className="text-sm font-bold mb-2 uppercase tracking-widest text-blue-400">MNIST CNN Simulation</h1>
+          <h1 className="text-sm font-bold mb-2 uppercase tracking-widest text-blue-400">{lang === 'sr' ? 'MNIST CNN Simulacija' : 'MNIST CNN Simulation'}</h1>
           
           <div className="flex flex-wrap justify-center items-center gap-2 mb-3">
             <button 
@@ -767,21 +767,21 @@ export function Scene() {
             <button 
               onClick={() => setShowStars(!showStars)}
               className="p-1.5 rounded-full bg-white/5 hover:bg-white/20 transition-colors"
-              title={showStars ? "Hide stars" : "Show stars"}
+              title={lang === 'sr' ? (showStars ? "Sakrij zvezde" : "Prikaži zvezde") : (showStars ? "Hide stars" : "Show stars")}
             >
               {showStars ? <Eye size={18} className="text-blue-400" /> : <EyeOff size={18} className="text-gray-400" />}
             </button>
             <button 
               onClick={() => setShowGrid(!showGrid)}
               className="p-1.5 rounded-full bg-white/5 hover:bg-white/20 transition-colors"
-              title={showGrid ? "Hide grid" : "Show grid"}
+              title={lang === 'sr' ? (showGrid ? "Sakrij mrežu" : "Prikaži mrežu") : (showGrid ? "Hide grid" : "Show grid")}
             >
               <Grid3x3 size={18} className={showGrid ? "text-blue-400" : "text-gray-400"} />
             </button>
             <button 
               onClick={() => setShowConnections(!showConnections)}
               className="p-1.5 rounded-full bg-white/5 hover:bg-white/20 transition-colors"
-              title={showConnections ? "Hide connections" : "Show connections"}
+              title={lang === 'sr' ? (showConnections ? "Sakrij veze" : "Prikaži veze") : (showConnections ? "Hide connections" : "Show connections")}
             >
               <Network size={18} className={showConnections ? "text-blue-400" : "text-gray-400"} />
             </button>
@@ -810,21 +810,21 @@ export function Scene() {
             <button 
               onClick={() => setShowDataPanel(!showDataPanel)}
               className="p-1.5 rounded-full bg-white/5 hover:bg-white/20 transition-colors"
-              title={showDataPanel ? "Hide Data Collection" : "Show Data Collection"}
+              title={lang === 'sr' ? (showDataPanel ? "Sakrij kolekciju podataka" : "Prikaži kolekciju podataka") : (showDataPanel ? "Hide Data Collection" : "Show Data Collection")}
             >
               <Upload size={18} className={showDataPanel ? "text-green-400" : "text-gray-400"} />
             </button>
             <button 
               onClick={() => setShowTrainingPanel(!showTrainingPanel)}
               className="p-1.5 rounded-full bg-white/5 hover:bg-white/20 transition-colors"
-              title={showTrainingPanel ? "Hide Training Monitor" : "Show Training Monitor"}
+              title={lang === 'sr' ? (showTrainingPanel ? "Sakrij monitor treninga" : "Prikaži monitor treninga") : (showTrainingPanel ? "Hide Training Monitor" : "Show Training Monitor")}
             >
               <Activity size={18} className={showTrainingPanel ? "text-blue-400" : "text-gray-400"} />
             </button>
             <button 
               onClick={() => setShowInputPanel(!showInputPanel)}
               className="p-1.5 rounded-full bg-white/5 hover:bg-white/20 transition-colors"
-              title={showInputPanel ? "Hide Input Panel" : "Show Input Panel"}
+              title={lang === 'sr' ? (showInputPanel ? "Sakrij ulazni panel" : "Prikaži ulazni panel") : (showInputPanel ? "Hide Input Panel" : "Show Input Panel")}
             >
               <Settings size={18} className={showInputPanel ? "text-blue-400" : "text-gray-400"} />
             </button>
@@ -832,7 +832,7 @@ export function Scene() {
             <button 
               onClick={() => setShowARMode(!showARMode)}
               className="p-1.5 rounded-full bg-white/5 hover:bg-white/20 transition-colors flex items-center gap-1"
-              title="AR/VR Mode"
+              title={lang === 'sr' ? "AR/VR Režim" : "AR/VR Mode"}
             >
               <Box size={18} className={showARMode ? "text-blue-400" : "text-gray-400"} />
               <span className="text-[10px] text-gray-400 font-bold pr-1">AR/VR</span>
@@ -852,9 +852,18 @@ export function Scene() {
             <button 
               onClick={() => setShowHelp(!showHelp)}
               className="p-1.5 rounded-full bg-blue-500/20 hover:bg-blue-500/40 transition-colors"
-              title="Help & Guide"
+              title={lang === 'sr' ? 'Pomoć i Vodič' : 'Help & Guide'}
             >
               <HelpCircle size={18} className="text-blue-400" />
+            </button>
+
+            <button 
+              onClick={() => setLang(prev => prev === 'en' ? 'sr' : 'en')}
+              className="px-2 py-1 rounded-lg bg-blue-500/20 hover:bg-blue-500/40 transition-colors flex items-center gap-1.5 border border-blue-500/20"
+              title={lang === 'sr' ? 'Promeni jezik' : 'Change Language'}
+            >
+              <Languages size={16} className="text-blue-400" />
+              <span className="text-[10px] font-bold text-blue-400 uppercase">{lang}</span>
             </button>
             <button 
               onClick={() => setVisualContrast(prev => prev === 1.0 ? 3.0 : 1.0)}

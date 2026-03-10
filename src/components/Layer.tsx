@@ -266,12 +266,12 @@ export function Layer({ position, type, size, depth, label, active, textureUrl, 
         }
       }
     } else if (type === 'fc' || type === 'output') {
-      // FC: 10x12 vertical-first grid, Output: 1x10 vertical stack
+      // FC: 8x8 matrix, Output: 1x10 vertical stack
       const totalNeurons = size[0];
-      const gridWidth = type === 'fc' ? 10 : 1; // Width along Z
+      const gridWidth = type === 'fc' ? 8 : 1; // Width along Z
       const gridHeight = Math.ceil(totalNeurons / gridWidth); // Height along Y
       
-      const spacing = type === 'output' ? 0.6 : 0.35;
+      const spacing = type === 'output' ? 0.6 : 0.4;
       const radius = type === 'output' ? 0.22 : 0.15;
       const startZ = -(gridWidth - 1) * spacing / 2;
       const startY = (gridHeight - 1) * spacing / 2;
@@ -283,7 +283,7 @@ export function Layer({ position, type, size, depth, label, active, textureUrl, 
         const z = startZ + col * spacing;
         
         // Visualize activation intensity if available
-        const activation = activations ? activations[i] : 0;
+        const activation = activations ? (activations[i] || 0) : 0;
         const baseIntensity = active ? 0.5 : 0.25; 
         const pulseFactor = active ? 1.0 + Math.sin(Date.now() * 0.005) * 0.2 : 1.0;
         const intensity = activations ? Math.min(1.8, baseIntensity + activation * 1.2) : (active ? 0.8 : 0.3);        
