@@ -8,9 +8,10 @@ interface ConnectionProps {
   end: [number, number, number];
   active?: boolean;
   weight?: number; // Connection weight (0-1), affects line thickness
+  visualContrast?: number;
 }
 
-export function Connection({ start, end, active, weight = 0.5 }: ConnectionProps) {
+export function Connection({ start, end, active, weight = 0.5, visualContrast = 1.0 }: ConnectionProps) {
   const particleRef = useRef<THREE.Mesh>(null);
   const lineRef = useRef<any>(null);
   
@@ -39,7 +40,7 @@ export function Connection({ start, end, active, weight = 0.5 }: ConnectionProps
       particleRef.current.position.copy(pos);
       
       // Pulse effect for particle
-      const scale = 1 + Math.sin(time * 10) * 0.3;
+      const scale = (1 + Math.sin(time * 10) * 0.3) * (visualContrast > 1 ? 1.5 : 1);
       particleRef.current.scale.setScalar(scale);
     }
 
@@ -49,13 +50,13 @@ export function Connection({ start, end, active, weight = 0.5 }: ConnectionProps
             lineRef.current.material.dashOffset -= delta * 2;
             
             // Pulsing opacity
-            lineRef.current.material.opacity = 0.6 + Math.sin(time * 5) * 0.2;
+            lineRef.current.material.opacity = (0.6 + Math.sin(time * 5) * 0.2) * (visualContrast > 1 ? 1.4 : 1);
             
             // Color shift (Green to Cyan pulse)
             const hue = 0.35 + Math.sin(time * 2) * 0.1; 
             lineRef.current.material.color.setHSL(hue, 1, 0.5);
         } else {
-            lineRef.current.material.opacity = 0.1;
+            lineRef.current.material.opacity = 0.1 / visualContrast;
             lineRef.current.material.color.set("#333");
         }
     }
@@ -67,7 +68,7 @@ export function Connection({ start, end, active, weight = 0.5 }: ConnectionProps
         ref={lineRef}
         points={points} 
         color={active ? "#4ade80" : "#333"} 
-        lineWidth={(active ? 20 : 2) * weight}
+        lineWidth={(active ? 20 : 2) * weight * visualContrast}
         transparent 
         opacity={active ? 0.8 : 0.2} 
         dashed={true}
@@ -78,7 +79,7 @@ export function Connection({ start, end, active, weight = 0.5 }: ConnectionProps
       {active && (
         <Sphere ref={particleRef} args={[0.15, 16, 16]}>
           <meshBasicMaterial color="#fff" toneMapped={false} />
-          <pointLight distance={1} intensity={2} color="#4ade80" />
+          <pointLight distance={1 * visualContrast} intensity={2 * visualContrast} color="#4ade80" />
         </Sphere>
       )}
     </group>

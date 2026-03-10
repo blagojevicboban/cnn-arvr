@@ -35,6 +35,11 @@ Ova platforma implementira ključne stubove moderne ML vizuelizacije:
 - **Checkpoints**: Automatsko čuvanje najboljih modela u `localStorage` pretraživača, omogućavajući nastavak treninga nakon osvežavanja stranice.
 - **Statusna Konzola**: Detaljan uvid u stanje Web Workera i progres treninga.
 
+### ✅ Result 5: Gemini AI Mentor
+- **Kontekstualna Pomoć**: Chat sa vestačkom inteligencijom koja poznaje vaše trenutne metrike i aktivni sloj.
+- **Interaktivna Objašnjenja**: Postavljajte tehnička pitanja poput "Šta radi konvolucioni sloj?" i dobijte trenutne stručne odgovore.
+- **Saveti za Optimizaciju**: Dobijte savete u realnom vremenu o tome kako da poboljšate preciznost modela i smanjite gubitak.
+
 ---
 
 ## 🚀 Ključne Karakteristike

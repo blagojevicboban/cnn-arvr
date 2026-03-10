@@ -1,63 +1,73 @@
-# CNN 3D Vizuelizacija - Tehnička Dokumentacija
-**Verzija: v1.0.0**
+# CNN 3D Visualization - Technical Documentation
+**Version: v1.0.0**
 
-## Pregled
-Ovaj projekat predstavlja interaktivnu 3D vizuelizaciju konvolucione neuronske mreže (CNN) dizajnirane za prepoznavanje rukom pisanih cifara (MNIST stil). Omogućava korisnicima da prate proces treninga u realnom vremenu, ispituju aktivacije unutrašnjih slojeva i razumeju kako informacije protiču kroz mrežu.
+## Overview
+This project features an interactive 3D visualization of a Convolutional Neural Network (CNN) designed for handwritten digit recognition (MNIST style). It allows users to monitor the training process in real-time, inspect internal layer activations, and understand how information flows through the network.
 
-## Osnovna Arhitektura
+## Core Architecture
 
 ### 1. Frontend: React + Three.js
-- **React**: Upravlja stanjem interfejsa, panelima i logikom aplikacije.
-- **React Three Fiber (@react-three/fiber)**: Povezuje React sa Three.js za iscrtavanje 3D scene.
-- **Tailwind CSS**: Obezbeđuje moderan, premium izgled kontrolnih panela.
+- **React**: Manages the interface state, panels, and application logic.
+- **React Three Fiber (@react-three/fiber)**: Bridges React with Three.js for rendering the 3D scene.
+- **Tailwind CSS**: Provides a modern, premium look for the control panels.
 
-### 2. Računanje: TensorFlow.js + Web Workers
-- **Inference & Trening**: Sva teška računanja neuronske mreže su izbačena u **Web Worker** (`inferenceWorker.ts`). Ovo osigurava da interfejs ostane fluidan (60 FPS) čak i tokom aktivnog treninga.
-- **Backend**: Koristi `cpu` backend unutar worker-a radi stabilnosti i kompatibilnosti na različitim pretraživačima i hardveru.
+### 2. Computing: TensorFlow.js + Web Workers
+- **Inference & Training**: All heavy neural network computations are offloaded to a **Web Worker** (`inferenceWorker.ts`). This ensures the interface remains fluid (60 FPS) even during active training.
+- **Backend**: Uses the `cpu` backend inside the worker for stability and compatibility across different browsers and hardware.
 
-## Struktura Neuronske Mreže
-Model je sekvencijalni CNN sa sledećim slojevima:
-1.  **Input Layer (Ulaz)**: 28x28 grayscale slika.
-2.  **Conv2D Layer**: 8 filtera (3x3 kernel), ReLU aktivacija i Batch Normalizacija.
-3.  **MaxPooling2D Layer**: 2x2 pooling, smanjuje prostorne dimenzije.
-4.  **Fully Connected (FC) Layer**: 80 neurona sa ReLU aktivacijom, Batch Normalizacijom i Dropout-om (25%).
-5.  **Output Layer (Izlaz)**: 10 neurona sa Softmax aktivacijom (predstavljaju cifre 0-9).
+### 3. Intelligence: Google Gemini AI
+- **AI Mentor**: Integrated `gemini-1.5-flash` model for real-time education.
+- **Contextual Awareness**: The AI receives the current visualization state (active layer, training metrics, epoch) to provide relevant answers.
+- **Communication**: An asynchronous client implemented in `utils/gemini.ts` communicates with the Google GenAI API.
 
-## Ključne Funkcionalnosti
+## Neural Network Structure
+The model is a sequential CNN with the following layers:
+1.  **Input Layer**: 28x28 grayscale image.
+2.  **Conv2D Layer**: 8 filters (3x3 kernel), ReLU activation, and Batch Normalization.
+3.  **MaxPooling2D Layer**: 2x2 pooling, reduces spatial dimensions.
+4.  **Fully Connected (FC) Layer**: 80 neurons with ReLU activation, Batch Normalization, and Dropout (25%).
+5.  **Output Layer**: 10 neurons with Softmax activation (representing digits 0-9).
 
-### Vizuelizacija Treninga u Realnom Vremenu
-- **Mape Aktivacija**: Izlazi konvolucionih i pooling slojeva se pretvaraju u teksture u realnom vremenu tokom treninga.
-- **Svetlucanje Neurona (Glow)**: Neuroni FC i Output slojeva menjaju intenzitet sjaja na osnovu njihovih stvarnih vrednosti aktivacije ($0.0$ do $1.0$).
-- **Dinamičke Veze**: Debljina i boja linija veza između slojeva odražavaju snagu protoka informacija.
+## Key Functionalities
 
-### Monitor Treninga (Training Monitor)
-- **Grafik Gubitka (Loss)**: Prati `categoricalCrossentropy` gubitak. Preporučuje se ciljna vrednost ispod **0.1** za stabilna predviđanja.
-- **Grafik Preciznosti (Acc)**: Prati procenat tačnih klasifikacija na trenutnom batch-u.
-- **Praćenje Epoha**: Vizuelizuje napredak kroz ciklus od 100 epoha treninga.
+### Real-Time Training Visualization
+- **Activation Maps**: Convolutional and pooling layer outputs are converted to textures in real-time during training.
+- **Neuron Glow**: FC and Output layer neurons change glow intensity based on their actual activation values ($0.0$ to $1.0$).
+- **Dynamic Connections**: The thickness and color of connection lines between layers reflect the strength of information flow.
 
-### Generator Sintetičkih Podataka
-- **Font-to-Tensor**: Umesto statičnih slika, sistem koristi `OffscreenCanvas` za generisanje 1000 visokokvalitetnih uzoraka koristeći sistemske fontove (Arial/Sans-serif).
-- **Augmentacija**: Nasumična rotacija, translacija i šum se dodaju svakom uzorku kako bi se osiguralo da model dobro generalizuje na različite stilove unosa.
+### Training Monitor
+- **Loss Graph**: Tracks `categoricalCrossentropy` loss. A target value below **0.1** is recommended for stable predictions.
+- **Accuracy (Acc) Graph**: Tracks the percentage of correct classifications on the current batch.
+- **Epoch Tracking**: Visualizes progress through a cycle of 100 training epochs.
 
-## Tehnički Detalji Implementacije
+### Synthetic Data Generator
+- **Font-to-Tensor**: Instead of static images, the system uses `OffscreenCanvas` to generate 1000 high-quality samples using system fonts (Arial/Sans-serif).
+- **Augmentation**: Random rotation, translation, and noise are added to each sample to ensure the model generalizes well to different input styles.
 
-### Sinhronizacija Težina (Weights Synchronization)
-Pošto vizuelizacija zahteva podatke iz međuslojeva (Conv, Pool), worker koristi pristup sa dva modela:
-- **Trening Model**: Optimizovan za brzinu, vraća samo finalno predviđanje.
-- **Vizuelizacioni Model**: Kompajliran sa više izlaza za ekstrakciju unutrašnjih stanja.
-Težine se eksplicitno sinhronizuju koristeći `model.setWeights(trainModel.getWeights())` nakon svakog koraka treninga.
+### AI Mentor (Gemini Integration)
+- **Problem-Solving**: Helps users understand high Loss values and low Accuracy (Acc).
+- **Interactive Chat**: Allows direct questions about the model architecture (e.g., "What does the Conv layer do?").
+- **Metrics Analysis**: The `analyzeTrainingState` function automatically interprets graphs and provides advice for hyperparameter optimization.
 
-### Obrada Ulaza
-Kada korisnik odabere cifru ili otpremi sliku:
-1.  Slika se menja na veličinu 28x28.
-2.  Vrši se **Grayscale konverzija** ($0.299R + 0.587G + 0.114B$).
-3.  Primenjuje se **Pojačanje Contrasta** kako bi tanke linije fontova bile jasno vidljive konvolucionim filterima.
+## Technical Implementation Details
 
-## Uputstvo za Korišćenje
-1.  **Inicijalizacija**: Pri učitavanju, mreža ima nasumične težine.
-2.  **Trening**: Otvorite **Trening Monitor** i kliknite na **Start**. Pratite pad crvene linije (Loss).
-3.  **Testiranje**: Kada Loss padne ispod 0.1, koristite **MNIST Input** panel da odaberete cifru. 3D scena će se ažurirati i pokazati kako je mreža klasifikuje.
-4.  **Inspekcija**: Kliknite na bilo koji 3D sloj da fokusirate kameru i vidite njegove specifične parametre.
+### Weights Synchronization
+Since the visualization requires data from intermediate layers (Conv, Pool), the worker uses a dual-model approach:
+- **Training Model**: Optimized for speed, returns only the final prediction.
+- **Visualization Model**: Compiled with multiple outputs for internal state extraction.
+Weights are explicitly synchronized using `model.setWeights(trainModel.getWeights())` after each training step.
+
+### Input Processing
+When a user selects a digit or uploads an image:
+1.  The image is resized to 28x28.
+2.  **Grayscale conversion** is performed ($0.299R + 0.587G + 1.14B$).
+3.  **Contrast Enhancement** is applied to ensure thin font lines are clearly visible to convolutional filters.
+
+## Usage Guide
+1.  **Initialization**: On load, the network starts with random weights.
+2.  **Training**: Open the **Training Monitor** and click **Start**. Watch the red line (Loss) drop.
+3.  **Testing**: Once Loss falls below 0.1, use the **MNIST Input** panel to select a digit. The 3D scene will update to show how the network classifies it.
+4.  **Inspection**: Click on any 3D layer to focus the camera and view its specific parameters.
 
 ---
-*Kreirao Antigravity tim za Advanced Agentic Coding.*
+*Created by the Antigravity team for Advanced Agentic Coding.*

@@ -16,9 +16,10 @@ interface LayerProps {
   outputLabels?: string[]; // Labels for output neurons
   showMaps?: boolean;
   onClick?: () => void;
+  visualContrast?: number;
 }
 
-export function Layer({ position, type, size, depth, label, active, textureUrl, featureMaps, activations, outputLabels, showMaps = true, onClick }: LayerProps) {
+export function Layer({ position, type, size, depth, label, active, textureUrl, featureMaps, activations, outputLabels, showMaps = true, onClick, visualContrast = 1.0 }: LayerProps) {
   const groupRef = useRef<THREE.Group>(null);
   const [texture, setTexture] = useState<THREE.Texture | null>(null);
   const [mapTextures, setMapTextures] = useState<THREE.Texture[]>([]);
@@ -87,7 +88,7 @@ export function Layer({ position, type, size, depth, label, active, textureUrl, 
               transparent 
               opacity={0.9} 
               emissive={active ? "#4ade80" : "#000"}
-              emissiveIntensity={active ? 0.2 : 0}
+              emissiveIntensity={active ? (0.2 + Math.random() * 0.1) * visualContrast : 0}
               map={mapTex}
               side={THREE.DoubleSide}
             />
@@ -147,7 +148,7 @@ export function Layer({ position, type, size, depth, label, active, textureUrl, 
             transparent 
             opacity={0.9} 
             emissive={active ? "#fbbf24" : "#000"}
-            emissiveIntensity={active ? 0.3 : 0}
+            emissiveIntensity={active ? 0.3 * visualContrast : 0}
             map={texture}
             side={THREE.DoubleSide}
           />
@@ -221,8 +222,8 @@ export function Layer({ position, type, size, depth, label, active, textureUrl, 
               <sphereGeometry args={[radius, 8, 8]} />
               <meshStandardMaterial 
                 color={active ? "#fef08a" : "#666"} 
-                emissive={active ? "#fef08a" : "#000"}
-                emissiveIntensity={active ? (0.8 + Math.sin(Date.now() * 0.01) * 0.4) : 0}
+                emissive={active ? "#fef08a" : "#111"}
+                emissiveIntensity={active ? (1.5 + Math.sin(Date.now() * 0.05) * 0.8) * visualContrast : 0.2}
               />
             </mesh>
           );
@@ -255,9 +256,9 @@ export function Layer({ position, type, size, depth, label, active, textureUrl, 
               <mesh key={`map-${i}-n-${r}-${c}`} position={[0, y, z]}>
                 <sphereGeometry args={[radius, 8, 8]} />
                 <meshStandardMaterial 
-                  color={active ? "#67e8f9" : "#888"} 
-                  emissive={active ? "#67e8f9" : "#333"}
-                  emissiveIntensity={active ? (1.0 + Math.sin(Date.now() * 0.01 + i) * 0.5) : 0.2}
+                  color={active ? "#67e8f9" : "#444"} 
+                  emissive={active ? "#67e8f9" : "#222"}
+                  emissiveIntensity={active ? (1.2 + Math.sin(Date.now() * 0.04 + i) * 0.6) * visualContrast : 0.3}
                 />
               </mesh>
             );
@@ -299,7 +300,7 @@ export function Layer({ position, type, size, depth, label, active, textureUrl, 
               <meshStandardMaterial 
                 color={active ? color : "#aaa"} 
                 emissive={active ? color : "#444"}
-                emissiveIntensity={intensity * 2.5 * pulseFactor}
+                emissiveIntensity={intensity * 3.5 * pulseFactor * visualContrast}
                 side={THREE.DoubleSide}
               />
             </mesh>

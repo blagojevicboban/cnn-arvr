@@ -35,6 +35,11 @@ This platform implements the key pillars of modern ML visualization:
 - **Checkpoints**: Automatic saving of best models to the browser's `localStorage`, allowing training to resume after a page refresh.
 - **Status Console**: Detailed insight into Web Worker state and training progress.
 
+### ✅ Result 5: Gemini AI Mentor
+- **Context-Aware Assistance**: Chat with an AI that knows your current training metrics and active layer.
+- **Interactive Explanations**: Ask technical questions like "What does a convolution layer do?" and get instant expert answers.
+- **Optimization Tips**: Get real-time advice on how to improve your model's accuracy and reduce loss.
+
 ---
 
 ## 🚀 Key Features

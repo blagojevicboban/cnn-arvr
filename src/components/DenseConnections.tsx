@@ -17,9 +17,10 @@ interface DenseConnectionsProps {
   weight?: number; 
   activations1?: number[];
   activations2?: number[];
+  visualContrast?: number;
 }
 
-export function DenseConnections({ layer1, layer2, active, trainingStep = 0, weight = 1.0, activations1, activations2 }: DenseConnectionsProps) {
+export function DenseConnections({ layer1, layer2, active, trainingStep = 0, weight = 1.0, activations1, activations2, visualContrast = 1.0 }: DenseConnectionsProps) {
   const linesRef = useRef<THREE.LineSegments>(null);
   
   const { positions, colors } = useMemo(() => {
@@ -113,7 +114,7 @@ export function DenseConnections({ layer1, layer2, active, trainingStep = 0, wei
             const seed = i * count2 + j;
             const hue = 0.35 + ((Math.sin(seed + trainingStep * 0.5) + 1) / 2) * 0.15; // Cyan to Green
             const light = 0.4 + strength * 0.6;
-            color = new THREE.Color().setHSL(hue, 0.8 + strength * 0.2, light);
+            color = new THREE.Color().setHSL(hue, 0.8 + strength * 0.2 * visualContrast, light);
           } else {
             color = new THREE.Color(0x333333); 
           }
@@ -148,7 +149,7 @@ export function DenseConnections({ layer1, layer2, active, trainingStep = 0, wei
                     const seed = i + j;
                     const hue = 0.55 + ((Math.sin(seed + trainingStep * 0.5) + 1) / 2) * 0.1;
                     const light = 0.3 + strength * 0.6;
-                    color = new THREE.Color().setHSL(hue, 0.8 + strength * 0.2, light);
+                    color = new THREE.Color().setHSL(hue, 0.8 + strength * 0.2 * visualContrast, light);
                 } else {
                     color = new THREE.Color(0x333333); 
                 }
@@ -215,12 +216,13 @@ export function DenseConnections({ layer1, layer2, active, trainingStep = 0, wei
       positions: new Float32Array(points),
       colors: new Float32Array(colorArray)
     };
-  }, [layer1, layer2, trainingStep, activations1, activations2, active]);
+  }, [layer1, layer2, trainingStep, activations1, activations2, active, visualContrast]);
 
   useFrame((state) => {
     if (linesRef.current && active) {
-        // Animate opacity or color if needed
-        // linesRef.current.material.opacity = 0.1 + Math.sin(state.clock.elapsedTime) * 0.05;
+        // Pulse opacity to show life/training activity
+        const material = linesRef.current.material as THREE.LineBasicMaterial;
+        material.opacity = ((active ? 0.3 * visualContrast : 0.1) * weight) * (0.8 + Math.sin(state.clock.elapsedTime * 10) * 0.2);
     }
   });
 
@@ -243,10 +245,10 @@ export function DenseConnections({ layer1, layer2, active, trainingStep = 0, wei
       <lineBasicMaterial 
         vertexColors 
         transparent 
-        opacity={(active ? 0.3 : 0.2) * weight} 
+        opacity={(active ? 0.3 * visualContrast : 0.2 / visualContrast) * weight} 
         depthWrite={false}
         blending={THREE.AdditiveBlending}
-        linewidth={5 * weight}
+        linewidth={5 * weight * visualContrast}
       />
     </lineSegments>
   );

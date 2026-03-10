@@ -4,11 +4,13 @@ import { Layer } from './Layer';
 import { Connection } from './Connection';
 import { DenseConnections } from './DenseConnections';
 import { useState, useEffect, useRef } from 'react';
-import { Play, Pause, SkipForward, SkipBack, Upload, Settings, X, Activity, ChevronDown, ChevronUp, Eye, EyeOff, Grid3x3, Network, LayoutDashboard, HelpCircle, Info, Box } from 'lucide-react';
+import { Play, Pause, SkipForward, SkipBack, Upload, Settings, X, Activity, ChevronDown, ChevronUp, Eye, EyeOff, Grid3x3, Network, LayoutDashboard, HelpCircle, Info, Box, Zap, Target, Cpu, Layers, Contrast } from 'lucide-react';
 import * as THREE from 'three';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { processImage, startTraining, pauseTraining, resumeTraining, saveCheckpoint, loadCheckpoint, exportTrainingHistory, getWorker, tensorDataToMaps } from '../utils/imageProcessor';
 import { trainingDataset } from '../utils/trainingDataset';
+import { AIMentor } from './AIMentor';
+import { Sparkles } from 'lucide-react';
 // Sample images (using placeholder services for demo)
 const SAMPLE_IMAGES = [
   { id: '0', url: 'https://placehold.co/28x28/000000/FFFFFF/png?text=0', label: '0', type: 'MNIST' },
@@ -71,6 +73,8 @@ export function Scene() {
   const [showARMode, setShowARMode] = useState(false);
   const [showMatrices, setShowMatrices] = useState(true);
   const [connectionThickness, setConnectionThickness] = useState(2.0);
+  const [showAIMentor, setShowAIMentor] = useState(false);
+  const [visualContrast, setVisualContrast] = useState(1.0);
 
   // Training Data Collection
   const [collectedData, setCollectedData] = useState<{ images: number[][][]; labels: number[] }>(trainingDataset);
@@ -137,13 +141,13 @@ export function Scene() {
     }
   }, [selectedImage]);
 
-  // Simulate data flow (inference)
+  // Simulate data flow (inference and training flow)
   useEffect(() => {
     let interval: NodeJS.Timeout;
-    if (isPlaying && !isTraining) {
+    if (isPlaying || isTraining) {
       interval = setInterval(() => {
         setActiveLayer((prev) => (prev + 1) % 5);
-      }, 1500);
+      }, isTraining ? 400 : 1500); // Faster pulse during training to show activity
     }
     return () => clearInterval(interval);
   }, [isPlaying, isTraining]);
@@ -262,6 +266,17 @@ export function Scene() {
 
   return (
     <>
+      <AIMentor 
+        isOpen={showAIMentor} 
+        onClose={() => setShowAIMentor(false)} 
+        context={{
+            activeLayer: layers[activeLayer]?.label,
+            trainingHistory: trainingHistory,
+            currentMetrics: trainingHistory.length > 0 ? trainingHistory[trainingHistory.length - 1] : undefined,
+            epoch: epoch,
+            step: trainingStep
+        }}
+      />
       {isProcessing && (
         <div className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none">
           <div className="bg-black/60 text-white px-4 py-2 rounded-lg">
@@ -321,51 +336,74 @@ export function Scene() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8 text-gray-300 text-sm leading-relaxed text-left">
-              <div className="space-y-4">
+            <div className="flex flex-col gap-8 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar text-left">
+              {/* Sekcija 1: Brzi Vodič / Quick Guide */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
                   <h4 className="text-white font-semibold mb-2 flex items-center gap-2">
                     <Activity size={16} className="text-blue-400" />
-                    {lang === 'sr' ? 'Ključni korak: TRENIRANJE' : 'Critical Step: TRAINING'}
+                    {lang === 'sr' ? '1. TRENIRANJE' : '1. TRAINING'}
                   </h4>
-                  <p className="text-xs">
+                  <p className="text-xs text-gray-400">
                     {lang === 'sr' ? 
-                      'Kliknite na Start u Monitoru. Pratite crvenu liniju (Loss) - ona mora pasti što niže (idealno ispod 0.1). Trening ide kroz epohe; sačekajte bar 10-20 epoha. Možete pauzirati trening i odmah testirati tastere.' : 
-                      'Click Start in Monitor. Watch the red line (Loss) - it must drop as low as possible (ideally below 0.1). Training runs in epochs; wait for 10-20 epochs. You can pause and test digits immediately.'}
+                      'Kliknite na "Start" u Monitoru. Mreža uči kroz epohe dok Loss (greška) ne padne ispod 0.1.' : 
+                      'Click "Start" in the Monitor. The network learns through epochs until Loss (error) drops below 0.1.'}
                   </p>
                 </div>
                 <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
                   <h4 className="text-white font-semibold mb-2 flex items-center gap-2">
-                    <Grid3x3 size={16} className="text-green-400" />
-                    {lang === 'sr' ? 'Odabir ulaza' : 'Input Selection'}
+                    <Target size={16} className="text-green-400" />
+                    {lang === 'sr' ? '2. TESTIRANJE' : '2. TESTING'}
                   </h4>
-                  <p>{lang === 'sr' ? 
-                    'Koristite MNIST Input panel desno da izaberete primer cifre ili otpremite svoju sliku (28x28 piksela).' : 
-                    'Use the MNIST Input panel on the right to select a digit sample or upload your own image (28x28 pixels).'}
+                  <p className="text-xs text-gray-400">
+                    {lang === 'sr' ? 
+                      'Izaberite cifru u "MNIST Input" panelu i posmatrajte kako se aktivacije prenose kroz mrežu.' : 
+                      'Select a digit in the "MNIST Input" panel and watch activations flow through the network.'}
                   </p>
                 </div>
               </div>
 
-              <div className="space-y-4">
-                <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
-                  <h4 className="text-white font-semibold mb-2 flex items-center gap-2">
-                    <Network size={16} className="text-purple-400" />
-                    {lang === 'sr' ? 'Analiza veza' : 'Connection Analysis'}
-                  </h4>
-                  <p>{lang === 'sr' ? 
-                    'Gledajte kako se veze menjaju tokom učenja. Plave i zelene boje označavaju jače aktivacije. Labele na izlazu (desno) pokazuju sigurnost mreže.' : 
-                    'Watch how connections change during learning. Blue and green colors indicate stronger activations. Output labels (right) show the network certainty.'}
-                  </p>
+              {/* Sekcija 2: Detalji Mreže / Network Details */}
+              <div className="space-y-6">
+                <div className="border-l-2 border-blue-500 pl-4 py-1">
+                  <h3 className="text-white font-bold text-lg mb-4 flex items-center gap-2">
+                    <Layers size={20} className="text-blue-400" />
+                    {lang === 'sr' ? 'Struktura i Uloga Slojeva' : 'Structure and Layer Roles'}
+                  </h3>
+                  <div className="grid grid-cols-1 gap-3">
+                    <div className="bg-white/5 p-3 rounded-xl">
+                      <p className="text-xs"><strong className="text-blue-400">Conv (Convolution):</strong> {lang === 'sr' ? 'Ovaj sloj koristi filtere za skeniranje slike i detekciju ivica, uglova i specifičnih oblika cifara.' : 'This layer uses filters to scan the image and detect edges, corners, and specific digit patterns.'}</p>
+                    </div>
+                    <div className="bg-white/5 p-3 rounded-xl">
+                      <p className="text-xs"><strong className="text-blue-400">Pool (MaxPooling):</strong> {lang === 'sr' ? 'Smanjuje rezoluciju mapa aktivacija, zadržavajući samo najjače signale (najbitnije karakteristike).' : 'Reduces the resolution of activation maps, keeping only the strongest signals (most important features).'}</p>
+                    </div>
+                    <div className="bg-white/5 p-3 rounded-xl">
+                      <p className="text-xs"><strong className="text-blue-400">FC (Fully Connected):</strong> {lang === 'sr' ? 'Gledajući sve detektovane oblike, ovaj sloj vrši finalnu klasifikaciju i donosi logički zaključak.' : 'By looking at all detected patterns, this layer performs the final classification and makes a logical decision.'}</p>
+                    </div>
+                  </div>
                 </div>
-                <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
-                  <h4 className="text-white font-semibold mb-2 flex items-center gap-2">
-                    <Info size={16} className="text-orange-400" />
-                    {lang === 'sr' ? 'Interakcija' : 'Interaction'}
-                  </h4>
-                  <p>{lang === 'sr' ? 
-                    'Kliknite na bilo koji sloj u 3D sceni da vidite njegove parametre. Koristite donji panel za brzo prebacivanje prozora.' : 
-                    'Click on any layer in the 3D scene to see its parameters. Use the bottom panel to quickly toggle windows.'}
+
+                <div className="border-l-2 border-green-500 pl-4 py-1">
+                  <h3 className="text-white font-bold text-lg mb-4 flex items-center gap-2">
+                    <Zap size={20} className="text-green-400" />
+                    {lang === 'sr' ? 'Kako Mreža Uči?' : 'How Does the Network Learn?'}
+                  </h3>
+                  <p className="text-xs text-gray-400 leading-relaxed mb-4">
+                    {lang === 'sr' ? 
+                      'Tokom treninga, mreža dobija slike sa tačnim odgovorima. Ako pogreši, koriguju se "težine" (weights) između neurona koristeći matematički proces zvan backpropagation (povratno širenje greške). Što je Loss manji, mreža je sigurnija u svoje predviđanje.' : 
+                      'During training, the network is given images along with correct answers. If it makes a mistake, it adjusts the "weights" between neurons using a math process called backpropagation. The lower the Loss, the more confident the network is.'}
                   </p>
+                  <div className="bg-green-500/10 p-4 rounded-2xl border border-green-500/20 flex items-start gap-3">
+                    <Cpu size={24} className="text-green-400 shrink-0" />
+                    <div>
+                      <h5 className="text-green-400 font-bold text-xs uppercase mb-1">{lang === 'sr' ? 'Donošenje Odluke' : 'Decision Making'}</h5>
+                      <p className="text-[11px] text-gray-300">
+                        {lang === 'sr' ? 
+                          'Izlazni sloj ima 10 neurona (za cifre 0-9). Neuron koji najjače zasvetli (ima najveću vrednost) predstavlja odluku mreže.' : 
+                          'The output layer has 10 neurons (for digits 0-9). The neuron that glows the brightest (has the highest value) represents the network prediction.'}
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -640,7 +678,7 @@ export function Scene() {
                   size={layer.size as [number, number]} 
                   depth={layer.depth} 
                   label={layer.label}
-                  active={activeLayer === index || isTraining}
+                  active={activeLayer === index}
                   textureUrl={layer.type === 'input' ? selectedImage : undefined}
                   featureMaps={
                     layer.type === 'conv' ? processedData?.convMaps : 
@@ -655,6 +693,7 @@ export function Scene() {
                   }
                   onClick={() => setSelectedLayerId(layer.id)}
                   showMaps={showMatrices}
+                  visualContrast={visualContrast}
                 />
                 {showConnections && index < layers.length - 1 && (
                   <>
@@ -667,7 +706,7 @@ export function Scene() {
                       <DenseConnections
                         layer1={layer}
                         layer2={layers[index + 1]}
-                        active={activeLayer === index || isTraining}
+                        active={activeLayer === index}
                         trainingStep={trainingStep}
                         weight={0.8 * connectionThickness}
                         activations1={
@@ -677,13 +716,15 @@ export function Scene() {
                           layers[index + 1].type === 'fc' ? processedData?.fcActivations :
                           layers[index + 1].type === 'output' ? processedData?.outputProbs : undefined
                         }
+                        visualContrast={visualContrast}
                       />
                     ) : (
                       <Connection 
                         start={layer.pos as [number, number, number]} 
                         end={layers[index + 1].pos as [number, number, number]} 
-                        active={activeLayer === index || isTraining}
+                        active={activeLayer === index}
                         weight={0.6 * connectionThickness}
+                        visualContrast={visualContrast}
                       />
                     )}
                   </>
@@ -797,11 +838,34 @@ export function Scene() {
               <span className="text-[10px] text-gray-400 font-bold pr-1">AR/VR</span>
             </button>
             <button 
+              onClick={() => setShowAIMentor(!showAIMentor)}
+              className={`p-1.5 rounded-full transition-all flex items-center gap-1.5 ${
+                showAIMentor 
+                  ? 'bg-blue-600 shadow-lg shadow-blue-600/30' 
+                  : 'bg-blue-500/20 hover:bg-blue-500/40'
+              }`}
+              title="AI Mentor (Gemini)"
+            >
+              <Sparkles size={18} className={showAIMentor ? "text-white" : "text-blue-400"} />
+              <span className={`text-[10px] font-bold pr-1 ${showAIMentor ? 'text-white' : 'text-blue-400'}`}>AI MENTOR</span>
+            </button>
+            <button 
               onClick={() => setShowHelp(!showHelp)}
               className="p-1.5 rounded-full bg-blue-500/20 hover:bg-blue-500/40 transition-colors"
               title="Help & Guide"
             >
               <HelpCircle size={18} className="text-blue-400" />
+            </button>
+            <button 
+              onClick={() => setVisualContrast(prev => prev === 1.0 ? 3.0 : 1.0)}
+              className={`p-1.5 rounded-full transition-all flex items-center ${
+                visualContrast > 1.0 
+                  ? 'bg-orange-500 shadow-lg shadow-orange-500/30' 
+                  : 'bg-white/5 hover:bg-white/20'
+              }`}
+              title={lang === 'sr' ? 'Kontrast Vizuelizacije' : 'Visual Contrast'}
+            >
+              <Contrast size={18} className={visualContrast > 1.0 ? "text-white" : "text-gray-400"} />
             </button>
           </div>
 
